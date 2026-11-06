@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FATE: Flow from Adaptive Token Estimation (NeurIPS 2026)</title>
+  <meta name="description" content="FATE learns which pixels should be matched together and represented by a shared motion estimate: shared soft pixel-to-token assignments pool matching features and return predicted flow to pixels. Lowest zero-shot Sintel Final and KITTI error among the compared methods.">
+  <meta name="author" content="Cheng-Lin Hsieh, Stella X. Yu">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FATE: Flow from Adaptive Token Estimation">
+  <meta property="og:description" content="Learning the tokens of correspondence for dense optical flow. NeurIPS 2026.">
+  <meta property="og:url" content="https://chenglinh.github.io/FATE/">
+  <meta property="og:image" content="https://chenglinh.github.io/FATE/static/img/social.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FATE: Flow from Adaptive Token Estimation">
+  <meta name="twitter:description" content="Learning the tokens of correspondence for dense optical flow. NeurIPS 2026.">
+  <meta name="twitter:image" content="https://chenglinh.github.io/FATE/static/img/social.jpg">
+  <link rel="icon" href="static/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="static/fonts/eb-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="static/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<nav class="topnav" aria-label="Sections">
+  <div class="topnav-inner">
+    <a class="brand" href="#top">FATE</a>
+    <div class="navlinks">
+      <a href="#problem">Problem</a>
+      <a href="#method">Method</a>
+      <a href="#tokens">Learned tokens</a>
+      <a href="#results">Results</a>
+      <a href="#analysis">Analysis</a>
+      <a href="#citation">Cite</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="venue">NeurIPS 2026</div>
+    <h1><span class="ac">F</span>low from <span class="ac">A</span>daptive <span class="ac">T</span>oken <span class="ac">E</span>stimation</h1>
+    <p class="paper-title">Dense Flow from Adaptive Correspondence</p>
+    <p class="authors">
+      <a href="https://chenglinh.github.io/">Cheng-Lin Hsieh</a>
+      <span class="sep">&middot;</span>
+      <a href="https://web.eecs.umich.edu/~stellayu/">Stella X. Yu</a>
+    </p>
+    <p class="affil">University of Michigan</p>
+    <div class="buttons">
+      <a class="btn" href="https://chenglinh.github.io/papers/dense-flow-adaptive-correspondence.pdf">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l6 6v14H6z M14 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Paper</a>
+      <span class="btn disabled" title="Coming soon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l14 16M19 4L5 20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>arXiv <small>soon</small></span>
+      <a class="btn" href="https://github.com/chenglinh/FATE">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>Code</a>
+      <a class="btn" href="#citation">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h4v4c0 3-2 5-4 6M15 7h4v4c0 3-2 5-4 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>BibTeX</a>
+    </div>
+
+    <figure class="teaser">
+      <div class="teaser-bar">
+        <div class="pills" role="group" aria-label="Teaser example">
+          <button class="pill" aria-pressed="true" data-teaser="sintel">Sintel</button>
+          <button class="pill" aria-pressed="false" data-teaser="spring">Spring</button>
+        </div>
+        <div class="pills small" role="group" aria-label="Left layer">
+          <span class="pill-label">Left:</span>
+          <button class="pill" aria-pressed="true" data-teaser-left="units">Learned tokens</button>
+          <button class="pill" aria-pressed="false" data-teaser-left="image">Input image</button>
+        </div>
+      </div>
+      <div class="compare" id="teaser-compare">
+        <img class="layer base" alt="Predicted dense flow" draggable="false">
+        <div class="clip"><img class="layer top" alt="Learned tokens" draggable="false"></div>
+        <div class="divider" role="slider" tabindex="0" aria-label="Drag to compare" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span class="knob"><svg viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+        <span class="tag tag-left">Learned tokens</span>
+        <span class="tag tag-right">Predicted dense flow</span>
+        <div class="lens" aria-hidden="true"></div>
+      </div>
+      <figcaption>
+        <b>FATE learns which pixels each correspondence token represents.</b> White contours outline the learned tokens:
+        they follow object boundaries and fine structures, and each token returns its predicted flow to its own pixels.
+        Drag the slider; hover to magnify. <a href="#flow-colors">How to read flow colors</a>
+      </figcaption>
+    </figure>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="tldr wrap">
+  <p class="tldr-text"><span class="kicker">TL;DR</span> Optical flow must combine evidence across pixels while
+    preserving distinct pixel motions. Modern networks match on regular feature grids, where the link between each
+    token's motion estimate and the pixels it represents stays implicit. <b>FATE learns which pixels to match together
+    and represent by one shared motion estimate</b>: the same soft pixel-to-token assignments gather each token's
+    matching evidence and return its predicted flow to those pixels. The gains are largest <b>where direct matches
+    are missing</b> and <b>near motion boundaries</b>.</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-num"><span data-count="2.10" data-dec="2">2.10</span><span class="stat-sep">/</span><span data-count="3.11" data-dec="2">3.11</span></div><div class="stat-label">Sintel Final / KITTI EPE</div><div class="stat-note">lowest zero-shot error among the compared methods</div></div>
+    <div class="stat"><div class="stat-num">42&ndash;52%</div><div class="stat-label">of a fine-grid baseline&rsquo;s error</div><div class="stat-note">comes from the 6&ndash;14% of pixels whose target is occluded or out of frame</div></div>
+    <div class="stat"><div class="stat-num">1.2&ndash;2.6<span class="stat-unit">px</span></div><div class="stat-label">lower EPE where direct matches are missing</div><div class="stat-note">than WAFT, zero-shot on Sintel and KITTI; 0.25&ndash;0.46&nbsp;px overall</div></div>
+    <div class="stat"><div class="stat-num">0.7&ndash;1.5<span class="stat-unit">px</span></div><div class="stat-label">lower EPE near motion boundaries</div><div class="stat-note">than WAFT, whose finer grid uses four times as many tokens</div></div>
+  </div>
+</section>
+
+<section class="wrap narrow abstract" aria-labelledby="abstract-h">
+  <details class="card fold-card">
+  <summary><h2 id="abstract-h">Abstract</h2></summary>
+  <p>Reliable optical flow requires combining evidence across pixels while preserving distinct pixel motions. Modern
+    networks strengthen matching on regular feature grids, while the relationship between each token's estimated motion
+    and the pixels it represents remains implicit. We introduce <em>Dense flow from Adaptive CorrespondencE</em>
+    (FATE), which learns which pixels should be matched together and represented by a shared motion estimate. Shared
+    soft pixel-to-token assignments pool contextual features, define token-flow targets, and distribute predictions to
+    pixels. Flow supervision learns the assignments and matching features jointly, with pixel-level grouping and
+    correspondence over fewer tokens. Under the standard zero-shot protocol, FATE achieves the lowest average flow error
+    on Sintel Final and KITTI among the compared methods. We also find that pixels with occluded or out-of-frame
+    targets account for roughly half of a fine-grid baseline's average flow error despite occupying a small fraction
+    of valid pixels. FATE reduces error in these regions and near motion boundaries. Design studies support improved
+    use of context and more faithful representation of pixel motion.</p>
+  </details>
+</section>
+
+<!-- ============================================================ PROBLEM -->
+<section id="problem" class="section">
+  <div class="wrap narrow sec-head">
+    <div class="eyebrow">The problem</div>
+    <h2>Share evidence, preserve distinct pixel motions</h2>
+    <p class="lead">Weak texture, repeated patterns and occlusion make a pixel's own match ambiguous or missing, so
+      evidence must come from its surroundings. Yet neighboring pixels may move differently. Reliable flow shares
+      evidence to resolve ambiguity while preserving motion boundaries.</p>
+  </div>
+
+  <div class="wrap">
+    <figure class="card fig" id="premise">
+      <div class="premise">
+        <div class="premise-col" data-connectors='[{"c":"context","from":"a-full","box":[0.7266,0.2798,0.8672,0.5275],"fc":["sw","se"],"to":"a-image1","tc":["nw","ne"],"knock":"a-image1"},{"c":"detail","from":"a-image1","box":[0.3889,0.3519,0.6111,0.6481],"fc":["sw","se"],"to":"a-detail","tc":["nw","ne"],"knock":"a-detail"}]'>
+          <div class="premise-title">Fine structures</div>
+          <p class="premise-desc">A fine structure moves differently from its surroundings.</p>
+          <figure class="pm pm-full" data-panel="a-full"><figcaption>Image 1 (full)</figcaption><img src="static/img/problem/a_full.webp" width="1080" height="460" loading="lazy" alt="Fine structures: Image 1, full frame"></figure>
+          <div class="pm-row two">
+            <figure class="pm" data-panel="a-image1"><figcaption>Image 1</figcaption><img src="static/img/problem/a_image1.webp" width="645" height="484" loading="lazy" alt="Image 1 crop"></figure>
+            <figure class="pm"><figcaption>Image 2</figcaption><img src="static/img/problem/a_image2.webp" width="645" height="484" loading="lazy" alt="Image 2 crop"></figure>
+          </div>
+          <div class="pm-row four">
+            <figure class="pm" data-panel="a-detail"><figcaption>Detail</figcaption><img src="static/img/problem/a_detail.webp" width="321" height="321" loading="lazy" alt="Detail"></figure>
+            <figure class="pm"><figcaption>WAFT</figcaption><img src="static/img/problem/a_waft.webp" width="321" height="321" loading="lazy" alt="WAFT flow"></figure>
+            <figure class="pm ours"><figcaption>FATE</figcaption><img src="static/img/problem/a_fate.webp" width="321" height="321" loading="lazy" alt="FATE flow"></figure>
+            <figure class="pm"><figcaption>GT</figcaption><img src="static/img/problem/a_gt.webp" width="321" height="321" loading="lazy" alt="Ground truth flow"></figure>
+          </div>
+        </div>
+        <div class="premise-col">
+          <div class="premise-title">Occlusion</div>
+          <p class="premise-desc">A wing hides a background patch in Image&nbsp;2, removing its visible match.</p>
+          <figure class="pm pm-full"><figcaption>Image 1 (full)</figcaption><img src="static/img/problem/b_full.webp" width="1080" height="460" loading="lazy" alt="Occlusion: Image 1, full frame"></figure>
+          <div class="pm-row two">
+            <figure class="pm"><figcaption>Image 1</figcaption><img src="static/img/problem/b_image1.webp" width="645" height="484" loading="lazy" alt="Image 1 crop"></figure>
+            <figure class="pm"><figcaption>Image 2</figcaption><img src="static/img/problem/b_image2.webp" width="645" height="484" loading="lazy" alt="Image 2 crop"></figure>
+          </div>
+          <div class="pm-row four">
+            <figure class="pm"><figcaption>Detail</figcaption><img src="static/img/problem/b_detail.webp" width="321" height="321" loading="lazy" alt="Detail"></figure>
+            <figure class="pm"><figcaption>WAFT</figcaption><img src="static/img/problem/b_waft.webp" width="321" height="321" loading="lazy" alt="WAFT flow"></figure>
+            <figure class="pm ours"><figcaption>FATE</figcaption><img src="static/img/problem/b_fate.webp" width="321" height="321" loading="lazy" alt="FATE flow"></figure>
+            <figure class="pm"><figcaption>GT</figcaption><img src="static/img/problem/b_gt.webp" width="321" height="321" loading="lazy" alt="Ground truth flow"></figure>
+          </div>
+        </div>
+        <div class="premise-col">
+          <div class="premise-title">Shared motion</div>
+          <p class="premise-desc">Different appearances across the car body share coherent motion.</p>
+          <figure class="pm pm-full"><figcaption>Image 1 (full)</figcaption><img src="static/img/problem/c_full.webp" width="1080" height="327" loading="lazy" alt="Shared motion: Image 1, full frame"></figure>
+          <div class="pm-row two">
+            <figure class="pm"><figcaption>Image 1</figcaption><img src="static/img/problem/c_image1.webp" width="645" height="484" loading="lazy" alt="Image 1 crop"></figure>
+            <figure class="pm"><figcaption>Image 2</figcaption><img src="static/img/problem/c_image2.webp" width="645" height="484" loading="lazy" alt="Image 2 crop"></figure>
+          </div>
+          <div class="pm-row four">
+            <figure class="pm"><figcaption>Detail</figcaption><img src="static/img/problem/c_detail.webp" width="321" height="321" loading="lazy" alt="Detail"></figure>
+            <figure class="pm"><figcaption>WAFT</figcaption><img src="static/img/problem/c_waft.webp" width="321" height="321" loading="lazy" alt="WAFT flow"></figure>
+            <figure class="pm ours"><figcaption>FATE</figcaption><img src="static/img/problem/c_fate.webp" width="321" height="321" loading="lazy" alt="FATE flow"></figure>
+            <figure class="pm"><figcaption>GT</figcaption><img src="static/img/problem/c_gt.webp" width="321" height="321" loading="lazy" alt="Ground truth flow"></figure>
+          </div>
+        </div>
+      </div>
+      <figcaption>Boxes locate enlargements framed in the same color: context crops in gold, then detail and flow
+        crops in blue. Dashed boxes repeat Image&nbsp;1 coordinates in Image&nbsp;2. The bottom row compares
+        zero-shot WAFT and FATE predictions with ground-truth flow (GT). Colors share a scale per example; gray marks unlabeled
+        GT.</figcaption>
+    </figure>
+  </div>
+
+  <div class="wrap narrow">
+    <h3 class="sub">FATE learns which pixels to match together</h3>
+    <p>FATE learns how each token's motion estimate relates to the pixels it represents, a relation that regular grids
+      leave implicit. One set of soft pixel-to-token assignments, predicted at image resolution, plays three roles:</p>
+    <ul class="roles">
+      <li><b>Pool</b> dense image features into each token's matching features.</li>
+      <li><b>Define</b> each token's flow target from the ground-truth flow of its pixels.</li>
+      <li><b>Distribute</b> each token's predicted flow back to its pixels.</li>
+    </ul>
+    <p>Each token can draw on broader context, while its estimated motion stays tied to the pixels it represents.</p>
+  </div>
+</section>
+
+<!-- ============================================================ METHOD -->
+<section id="method" class="section alt">
+  <div class="wrap narrow sec-head">
+    <div class="eyebrow">Method</div>
+    <h2>FATE jointly learns grouping and matching</h2>
+    <p class="lead">Matching features and flow are estimated in token space, then returned to pixels through the same
+      assignments. Grouping combines pixel evidence for matching; learning to match shapes the grouping and its
+      features.</p>
+  </div>
+
+  <div class="wrap">
+    <figure class="card fig" id="pipeline">
+      <div class="fig-head">
+        <div class="fig-title">The pipeline, step by step</div>
+        <div class="pills small" role="group" aria-label="Pipeline step">
+          <button class="pill" aria-pressed="true" data-step="0">All</button>
+          <button class="pill" aria-pressed="false" data-step="1">1 Features</button>
+          <button class="pill" aria-pressed="false" data-step="2">2 Assignments</button>
+          <button class="pill" aria-pressed="false" data-step="3">3 Token features</button>
+          <button class="pill" aria-pressed="false" data-step="4">4 Matching</button>
+          <button class="pill" aria-pressed="false" data-step="5">5 Broadcasting</button>
+          <button class="pill" aria-pressed="false" data-step="6">Supervision</button>
+        </div>
+      </div>
+      <div class="pipeline-stage">
+        <img src="static/img/method/pipeline.webp" width="2367" height="912" alt="FATE pipeline: feature extraction, soft pixel-to-token assignments, adaptive pooling and local attention, token matching and refinement, and adaptive broadcasting back to dense flow, supervised by ground-truth flow">
+        <svg class="pipeline-overlay" viewBox="0 0 591.72 228" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </div>
+      <div class="step-text" id="step-text" aria-live="polite"></div>
+    </figure>
+  </div>
+
+  <div class="wrap">
+    <figure class="card fig" id="structure">
+      <div class="fig-head"><div class="fig-title">Learned assignments adapt tokens to motion structure</div></div>
+      <img class="structure-img" src="static/img/method/structure.webp" width="1678" height="420" loading="lazy"
+        alt="A moving blade from Sintel with two examined pixels. Near the motion boundary, the pixel puts almost all its weight on the blade token below, whose support follows the boundary. In the coherent region, the pixel shares weight across several tokens, and the selected token's support is broad.">
+      <figcaption>Two pixels \(x\) on a moving blade, each examined in the panels framed in its color: its weights
+        over nearby token anchors (a row of \(A\)) and the support of its most strongly weighted token \(q\) (a column of
+        \(A\)). Near the motion boundary, \(x\) favors the blade token below over its own cell's background token, and
+        the support of \(q\) follows the boundary. In the coherent region, \(x\) shares weight across several tokens,
+        while the selected token has broad, soft support.</figcaption>
+    </figure>
+
+    <details class="card fold-card" id="assign-demo">
+      <summary><span class="fig-title">Try it: how one pixel spreads its weight over nearby tokens</span></summary>
+      <div class="fold-body">
+      <p class="fold-text">Token anchors \(q\) sit on a regular lattice, which fixes the token count; each token's pixel
+        support is learned. Pixel \(x\) can assign weight to the \(3\times3\) anchors around its cell. A compact head
+        predicts a Gaussian over their offsets \(\delta_{xq}\): its center \(\mu_x\) favors particular tokens, and its
+        inverse covariance \(G_x\) sets how widely, and in which direction, the pixel shares its weight.</p>
+      <div class="eq eq-pair">
+        <div>\[ a_{xq} = -\tfrac12\big(\delta_{xq}-\mu_x\big)^{\!\top} G_x\,\big(\delta_{xq}-\mu_x\big), \]</div>
+        <div>\[ A_{xq}=\frac{\exp a_{xq}}{\sum_{r\in\mathcal N(x)}\exp a_{xr}}. \]</div>
+      </div>
+      <div class="fig-head">
+        <div class="fig-note">Pooling uses the normalized columns, \(P_q(A)=D_A^{-1}A^{\top}\); broadcasting uses the
+          rows, \(P_x(A)=A\).</div>
+        <div class="pills small" role="group" aria-label="Presets">
+          <button class="pill" aria-pressed="false" data-preset="interior">Inside a region</button>
+          <button class="pill" aria-pressed="false" data-preset="boundary">Near a motion boundary</button>
+          <button class="pill" aria-pressed="false" data-preset="edge">Along one direction</button>
+        </div>
+      </div>
+      <div class="assign-layout">
+        <div class="assign-canvas-wrap">
+          <svg id="assign-svg" viewBox="0 0 420 420" role="img" aria-label="Three by three token anchors with a draggable Gaussian mean"></svg>
+          <p class="hint">Drag the orange point \(\mu_x\) to move the Gaussian.</p>
+        </div>
+        <div class="assign-side">
+          <label class="slider">Spread <span id="v-spread"></span><input type="range" id="s-spread" min="0.15" max="1.6" step="0.01" value="0.75"></label>
+          <label class="slider">Elongation <span id="v-elong"></span><input type="range" id="s-elong" min="1" max="5" step="0.05" value="1"></label>
+          <label class="slider">Orientation <span id="v-rot"></span><input type="range" id="s-rot" min="0" max="180" step="1" value="0"></label>
+          <div class="entropy">
+            <div class="entropy-head"><span>How spread out the weights are</span><b id="v-entropy"></b></div>
+            <div class="entropy-track"><div class="entropy-mark" id="entropy-mark"></div></div>
+            <div class="entropy-scale"><span>one token</span><span>shared by many</span></div>
+          </div>
+          <p class="assign-msg" id="assign-msg"></p>
+        </div>
+      </div>
+      </div>
+    </details>
+
+    <figure class="card fig" id="spaces">
+      <div class="fig-head"><div class="fig-title">Correspondence in token space, supervision in both spaces</div></div>
+      <img class="structure-img" src="static/img/method/spaces.webp" width="1659" height="518" loading="lazy"
+        alt="Pixel space and token space for both images. Pooling forms tokens in each image; matching gives token flow, which broadcasting returns to dense flow. The same assignments pool ground-truth flow into token targets, and three losses connect predictions and ground truth in both spaces.">
+      <figcaption>Upper views enlarge the boxed regions below. Support colors show pooled RGB; matching uses learned
+        features. Flow maps share one color scale. Blue links show predicted token correspondences, and gold volumes
+        mark Image&nbsp;1's shared assignments. \(\mathcal F_q\) denotes token flow with uncertainty. In each loss, the
+        bar separates what is learned (left) from what is taken as given (right).</figcaption>
+    </figure>
+    <div class="losses">
+      <div class="loss card">
+        <div class="loss-tag">\(\mathcal L_{\text{token}}(\mathcal F_q\mid P_q)\)<span class="loss-name">Predict each token's motion</span></div>
+        <p>Each token learns to predict its pixel group's motion, using fixed targets that \(P_q\) pools from ground
+          truth.</p>
+      </div>
+      <div class="loss card">
+        <div class="loss-tag">\(\mathcal L_{\text{assign}}(P_x\mid\mathcal F_q)\)<span class="loss-name">Assign pixels to compatible tokens</span></div>
+        <p>With token predictions held fixed, \(P_x\) learns how strongly each pixel should rely on neighboring tokens
+          to explain its ground-truth motion.</p>
+      </div>
+      <div class="loss card">
+        <div class="loss-tag">\(\mathcal L_{\text{flow}}(P_q,P_x\mid F_x^{\text{gt}})\)<span class="loss-name">Preserve motion through grouping</span></div>
+        <p>Ground truth pooled by \(P_q\) and broadcast back by \(P_x\) should reproduce the original, so grouping
+          retains motion differences.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ LEARNED UNITS -->
+<section id="tokens" class="section">
+  <div class="wrap narrow sec-head">
+    <div class="eyebrow">Learned tokens</div>
+    <h2>Tokens follow motion structure</h2>
+    <p class="lead">Each token's support is learned through flow prediction. In the zero-shot model, neighboring groups follow
+      object boundaries, separating foreground from background motion, and single tokens adapt beyond their grid
+      cells.</p>
+  </div>
+  <div class="wrap">
+    <figure class="card fig" id="groups">
+      <div class="fig-head"><div class="fig-title">Learned groups and selected tokens</div></div>
+      <div class="regions" data-connectors='[{"c":"context","from":"r1-image1","box":[0.2321,0.3929,0.5179,0.6786],"fc":["ne","se"],"to":"r1-groups","tc":["nw","sw"]},{"c":"detail","from":"r1-groups","box":[0.1719,0.25,0.3281,0.5625],"fc":["ne","se"],"to":"r1-unit","tc":["nw","sw"]}]'>
+        <div class="region-row">
+          <figure class="pm" data-panel="r1-image1"><figcaption>Image 1</figcaption><img src="static/img/units/r1_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
+          <figure class="pm" data-panel="r1-groups"><figcaption>Learned groups</figcaption><img src="static/img/units/r1_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
+          <figure class="pm" data-panel="r1-unit"><figcaption>Token support</figcaption><img src="static/img/units/r1_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
+          <figure class="pm"><figcaption>GT flow (crop)</figcaption><img src="static/img/units/r1_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
+          <figure class="pm"><figcaption>GT flow (detail)</figcaption><img src="static/img/units/r1_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
+        </div>
+        <div class="region-row">
+          <figure class="pm"><img src="static/img/units/r2_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
+          <figure class="pm"><img src="static/img/units/r2_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
+          <figure class="pm"><img src="static/img/units/r2_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
+          <figure class="pm"><img src="static/img/units/r2_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
+          <figure class="pm"><img src="static/img/units/r2_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
+        </div>
+      </div>
+      <figcaption>Each row shows one scene's learned groups and one selected token, then both on ground-truth flow.
+        Neighboring groups follow slat edges and a bent body outline; the selected tokens follow an outer slat edge
+        and the body contour, beyond their nominal grid cells (dashed). White contours separate pixels with different
+        strongest token assignments; the model keeps soft weights. Gold and blue boxes locate the two enlargement levels, framed in
+        the same color.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================================================ RESULTS -->
+<section id="results" class="section alt">
+  <div class="wrap narrow sec-head">
+    <div class="eyebrow">Results</div>
+    <h2>Lowest zero-shot error on Sintel Final and KITTI</h2>
+    <p class="lead">All models train on the synthetic FlyingChairs and FlyingThings3D datasets and are tested on
+      Sintel and KITTI without target-domain flow training.</p>
+  </div>
+  <div class="wrap">
+    <figure class="card fig" id="fig-zeroshot">
+      <div class="fig-head">
+        <div class="fig-title">Error versus compute</div>
+        <div class="pills small" role="group" aria-label="Metric" data-group="zs-metric">
+          <button class="pill" aria-pressed="true" data-metric="sintelFinal">Sintel Final</button>
+          <button class="pill" aria-pressed="false" data-metric="sintelClean">Sintel Clean</button>
+          <button class="pill" aria-pressed="false" data-metric="kittiEPE">KITTI EPE</button>
+          <button class="pill" aria-pressed="false" data-metric="kittiFl">KITTI Fl</button>
+        </div>
+      </div>
+      <div class="split">
+        <div class="chart" id="chart-zs-scatter"></div>
+        <div class="chart" id="chart-zs-rank"></div>
+      </div>
+      <figcaption>Lower is better. Left: error versus compute for one 540&times;960 image pair; the dashed line links
+        the most accurate method at each budget. Right: all methods, ranked.</figcaption>
+      <details class="numbers" data-table="zeroShot"><summary>Show the numbers</summary></details>
+    </figure>
+
+    <figure class="card fig" id="fig-regions">
+      <div class="fig-head">
+        <div class="fig-title">Where the error is, and where FATE reduces it</div>
+      </div>
+      <div class="regions-stack">
+        <div class="chart" id="chart-concentration"></div>
+        <div>
+          <div class="legend-inline"><span class="lg sq waft">WAFT</span><span class="lg sq dace">FATE</span></div>
+          <div class="chart" id="chart-regions"></div>
+        </div>
+      </div>
+      <figcaption>Top: pixels whose target is occluded or out of frame are 6&ndash;14% of valid pixels, yet they account
+        for 42&ndash;52% of the fine-grid baseline WAFT&rsquo;s error. Bottom: EPE pooled over each region, with
+        FATE&rsquo;s change from WAFT in pixels (0.25&ndash;0.46&nbsp;px overall on Sintel and KITTI). On Things, the
+        in-distribution split, the missing-target region holds only out-of-frame pixels. Near motion boundaries:
+        5&times;5 neighborhoods of ground-truth flow changes above 2&nbsp;pixels.</figcaption>
+      <details class="numbers" data-table="regions"><summary>Show the numbers</summary></details>
+    </figure>
+
+    <div class="card fig gallery" id="gallery">
+      <div class="fig-head"><div class="fig-title">Zero-shot examples</div><span class="fig-note">WAFT estimates flow for four times as many tokens</span></div>
+      <div class="thumbs" role="group" aria-label="Examples"></div>
+      <div class="gallery-head">
+        <div>
+          <div class="ex-title" id="ex-title"></div>
+          <div class="ex-meta" id="ex-meta"></div>
+        </div>
+      </div>
+      <p class="ex-caption" id="ex-caption"></p>
+      <div class="minis">
+        <figure class="mini" data-layer="image1"><div class="mini-img"><img alt="Image 1" draggable="false"><span class="mark"></span></div><figcaption>Image 1</figcaption></figure>
+        <figure class="mini" data-layer="image2"><div class="mini-img"><img alt="Image 2" draggable="false"><span class="mark"></span></div><figcaption>Image 2</figcaption></figure>
+        <figure class="mini" data-layer="gt"><div class="mini-img"><img alt="Ground-truth flow" draggable="false"><span class="mark"></span></div><figcaption>Ground truth</figcaption></figure>
+        <figure class="mini" data-layer="occ"><div class="mini-img"><img alt="Target visibility" draggable="false"><span class="mark"></span></div><figcaption><span class="sw-occ"></span>Target occluded or out of frame</figcaption></figure>
+      </div>
+      <div class="compare" id="gallery-compare">
+        <img class="layer base" alt="FATE flow" draggable="false">
+        <div class="clip"><img class="layer top" alt="WAFT flow" draggable="false"></div>
+        <div class="divider" role="slider" tabindex="0" aria-label="Drag to compare WAFT and FATE" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span class="knob"><svg viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+        <span class="tag tag-left">WAFT</span>
+        <span class="tag tag-right">FATE (ours)</span>
+        <div class="lens" aria-hidden="true"></div>
+        <span class="mark"></span>
+      </div>
+      <p class="gallery-hint">Drag to compare WAFT and FATE. Hover to magnify; the panels above mark the same point.</p>
+      <details class="reading" id="flow-colors">
+        <summary>How to read these images</summary>
+        <div class="reading-body">
+          <canvas id="colorwheel" width="132" height="132" aria-label="Optical flow color wheel"></canvas>
+          <p><b>Hue</b> gives the direction of motion and <b>color intensity</b> its speed; white means no motion.
+            Ground truth and both predictions share one color scale per example. In the visibility map, <b>blue</b>
+            marks pixels whose target is occluded or out of frame, gray the other valid pixels, and black excluded
+            pixels. Black in the ground truth marks missing labels; KITTI's sparse labels are enlarged for display.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ ANALYSIS -->
+<section id="analysis" class="section">
+  <div class="wrap narrow sec-head">
+    <div class="eyebrow">Analysis</div>
+    <h2>Adaptive tokens beat fixed grids at the same token count</h2>
+    <p class="lead">To test the formulation itself, we compare FATE with fixed-grid controls that share its backbone,
+      feature resolution, token count, refinement framework, and training recipe.</p>
+  </div>
+  <div class="wrap">
+    <figure class="card fig" id="fig-setup">
+      <div class="fig-head"><div class="fig-title">The setup: the same model with different tokens</div></div>
+      <div class="setup">
+        <figure class="su"><svg viewBox="-1 -1 162 162" aria-hidden="true"><defs><pattern id="su-waft-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.5" height="6" fill="#D64545" opacity=".6"/></pattern></defs><rect width="160" height="160" fill="#DDE5EC"/><path d="M0 70L0 80L0 90L0 100L0 110L0 120L0 130L0 140L0 150L0 160L10 160L20 160L30 160L40 160L50 160L60 160L70 160L80 160L90 160L100 160L110 160L120 160L130 160L140 160L150 160L160 160L160 150L160 140L150 140L140 140L140 130L130 130L130 120L120 120L120 110L110 110L110 100L110 90L100 90L100 80L90 80L90 70L80 70L70 70L60 70L60 60L50 60L40 60L30 60L30 50L20 50L20 40L10 40L10 30L0 30L0 40L0 50L0 60Z" fill="#F5B07A"/><path d="M10 0V160M0 10H160M20 0V160M0 20H160M30 0V160M0 30H160M40 0V160M0 40H160M50 0V160M0 50H160M60 0V160M0 60H160M70 0V160M0 70H160M80 0V160M0 80H160M90 0V160M0 90H160M100 0V160M0 100H160M110 0V160M0 110H160M120 0V160M0 120H160M130 0V160M0 130H160M140 0V160M0 140H160M150 0V160M0 150H160" stroke="#fff" stroke-opacity=".55" stroke-width=".6" fill="none"/><path d="M10 40L20 40L20 30L20 20L10 20L0 20L0 30L0 40ZM30 60L40 60L40 50L40 40L30 40L20 40L20 50L20 60ZM60 70L60 80L70 80L80 80L90 80L100 80L100 70L100 60L90 60L80 60L70 60L60 60ZM100 100L100 110L100 120L110 120L120 120L120 110L120 100L120 90L120 80L110 80L100 80L100 90ZM140 140L140 130L140 120L130 120L120 120L120 130L120 140L130 140Z" fill="url(#su-waft-hatch)"/><path d="M0 20h10M0 40h10M0 60h10M0 80h10M0 100h10M0 120h10M0 140h10M20 0v10M20 10v10M10 20h10M20 20v10M20 30v10M10 40h10M20 40v10M20 50v10M10 60h10M20 60v10M20 70v10M10 80h10M20 80v10M20 90v10M10 100h10M20 100v10M20 110v10M10 120h10M20 120v10M20 130v10M10 140h10M20 140v10M20 150v10M20 20h10M20 40h10M20 60h10M20 80h10M20 100h10M20 120h10M20 140h10M40 0v10M40 10v10M30 20h10M40 20v10M40 30v10M30 40h10M40 40v10M40 50v10M30 60h10M40 60v10M40 70v10M30 80h10M40 80v10M40 90v10M30 100h10M40 100v10M40 110v10M30 120h10M40 120v10M40 130v10M30 140h10M40 140v10M40 150v10M40 20h10M40 40h10M40 60h10M40 80h10M40 100h10M40 120h10M40 140h10M60 0v10M60 10v10M50 20h10M60 20v10M60 30v10M50 40h10M60 40v10M60 50v10M50 60h10M60 60v10M60 70v10M50 80h10M60 80v10M60 90v10M50 100h10M60 100v10M60 110v10M50 120h10M60 120v10M60 130v10M50 140h10M60 140v10M60 150v10M60 20h10M60 40h10M60 60h10M60 80h10M60 100h10M60 120h10M60 140h10M80 0v10M80 10v10M70 20h10M80 20v10M80 30v10M70 40h10M80 40v10M80 50v10M70 60h10M80 60v10M80 70v10M70 80h10M80 80v10M80 90v10M70 100h10M80 100v10M80 110v10M70 120h10M80 120v10M80 130v10M70 140h10M80 140v10M80 150v10M80 20h10M80 40h10M80 60h10M80 80h10M80 100h10M80 120h10M80 140h10M100 0v10M100 10v10M90 20h10M100 20v10M100 30v10M90 40h10M100 40v10M100 50v10M90 60h10M100 60v10M100 70v10M90 80h10M100 80v10M100 90v10M90 100h10M100 100v10M100 110v10M90 120h10M100 120v10M100 130v10M90 140h10M100 140v10M100 150v10M100 20h10M100 40h10M100 60h10M100 80h10M100 100h10M100 120h10M100 140h10M120 0v10M120 10v10M110 20h10M120 20v10M120 30v10M110 40h10M120 40v10M120 50v10M110 60h10M120 60v10M120 70v10M110 80h10M120 80v10M120 90v10M110 100h10M120 100v10M120 110v10M110 120h10M120 120v10M120 130v10M110 140h10M120 140v10M120 150v10M120 20h10M120 40h10M120 60h10M120 80h10M120 100h10M120 120h10M120 140h10M140 0v10M140 10v10M130 20h10M140 20v10M140 30v10M130 40h10M140 40v10M140 50v10M130 60h10M140 60v10M140 70v10M130 80h10M140 80v10M140 90v10M130 100h10M140 100v10M140 110v10M130 120h10M140 120v10M140 130v10M130 140h10M140 140v10M140 150v10M140 20h10M140 40h10M140 60h10M140 80h10M140 100h10M140 120h10M140 140h10M150 20h10M150 40h10M150 60h10M150 80h10M150 100h10M150 120h10M150 140h10" stroke="#34495E" stroke-width="1.6" stroke-linecap="square" fill="none"/><circle cx="10.0" cy="10.0" r="1.8" fill="#34495E"/><circle cx="10.0" cy="30.0" r="1.8" fill="#34495E"/><circle cx="10.0" cy="50.0" r="1.8" fill="#34495E"/><circle cx="10.0" cy="70.0" r="1.8" fill="#34495E"/><circle cx="10.0" cy="90.0" r="1.8" fill="#34495E"/><circle cx="10.0" cy="110.0" r="1.8" fill="#34495E"/><circle cx="10.0" cy="130.0" r="1.8" fill="#34495E"/><circle cx="10.0" cy="150.0" r="1.8" fill="#34495E"/><circle cx="30.0" cy="10.0" r="1.8" fill="#34495E"/><circle cx="30.0" cy="30.0" r="1.8" fill="#34495E"/><circle cx="30.0" cy="50.0" r="1.8" fill="#34495E"/><circle cx="30.0" cy="70.0" r="1.8" fill="#34495E"/><circle cx="30.0" cy="90.0" r="1.8" fill="#34495E"/><circle cx="30.0" cy="110.0" r="1.8" fill="#34495E"/><circle cx="30.0" cy="130.0" r="1.8" fill="#34495E"/><circle cx="30.0" cy="150.0" r="1.8" fill="#34495E"/><circle cx="50.0" cy="10.0" r="1.8" fill="#34495E"/><circle cx="50.0" cy="30.0" r="1.8" fill="#34495E"/><circle cx="50.0" cy="50.0" r="1.8" fill="#34495E"/><circle cx="50.0" cy="70.0" r="1.8" fill="#34495E"/><circle cx="50.0" cy="90.0" r="1.8" fill="#34495E"/><circle cx="50.0" cy="110.0" r="1.8" fill="#34495E"/><circle cx="50.0" cy="130.0" r="1.8" fill="#34495E"/><circle cx="50.0" cy="150.0" r="1.8" fill="#34495E"/><circle cx="70.0" cy="10.0" r="1.8" fill="#34495E"/><circle cx="70.0" cy="30.0" r="1.8" fill="#34495E"/><circle cx="70.0" cy="50.0" r="1.8" fill="#34495E"/><circle cx="70.0" cy="70.0" r="1.8" fill="#34495E"/><circle cx="70.0" cy="90.0" r="1.8" fill="#34495E"/><circle cx="70.0" cy="110.0" r="1.8" fill="#34495E"/><circle cx="70.0" cy="130.0" r="1.8" fill="#34495E"/><circle cx="70.0" cy="150.0" r="1.8" fill="#34495E"/><circle cx="90.0" cy="10.0" r="1.8" fill="#34495E"/><circle cx="90.0" cy="30.0" r="1.8" fill="#34495E"/><circle cx="90.0" cy="50.0" r="1.8" fill="#34495E"/><circle cx="90.0" cy="70.0" r="1.8" fill="#34495E"/><circle cx="90.0" cy="90.0" r="1.8" fill="#34495E"/><circle cx="90.0" cy="110.0" r="1.8" fill="#34495E"/><circle cx="90.0" cy="130.0" r="1.8" fill="#34495E"/><circle cx="90.0" cy="150.0" r="1.8" fill="#34495E"/><circle cx="110.0" cy="10.0" r="1.8" fill="#34495E"/><circle cx="110.0" cy="30.0" r="1.8" fill="#34495E"/><circle cx="110.0" cy="50.0" r="1.8" fill="#34495E"/><circle cx="110.0" cy="70.0" r="1.8" fill="#34495E"/><circle cx="110.0" cy="90.0" r="1.8" fill="#34495E"/><circle cx="110.0" cy="110.0" r="1.8" fill="#34495E"/><circle cx="110.0" cy="130.0" r="1.8" fill="#34495E"/><circle cx="110.0" cy="150.0" r="1.8" fill="#34495E"/><circle cx="130.0" cy="10.0" r="1.8" fill="#34495E"/><circle cx="130.0" cy="30.0" r="1.8" fill="#34495E"/><circle cx="130.0" cy="50.0" r="1.8" fill="#34495E"/><circle cx="130.0" cy="70.0" r="1.8" fill="#34495E"/><circle cx="130.0" cy="90.0" r="1.8" fill="#34495E"/><circle cx="130.0" cy="110.0" r="1.8" fill="#34495E"/><circle cx="130.0" cy="130.0" r="1.8" fill="#34495E"/><circle cx="130.0" cy="150.0" r="1.8" fill="#34495E"/><circle cx="150.0" cy="10.0" r="1.8" fill="#34495E"/><circle cx="150.0" cy="30.0" r="1.8" fill="#34495E"/><circle cx="150.0" cy="50.0" r="1.8" fill="#34495E"/><circle cx="150.0" cy="70.0" r="1.8" fill="#34495E"/><circle cx="150.0" cy="90.0" r="1.8" fill="#34495E"/><circle cx="150.0" cy="110.0" r="1.8" fill="#34495E"/><circle cx="150.0" cy="130.0" r="1.8" fill="#34495E"/><circle cx="150.0" cy="150.0" r="1.8" fill="#34495E"/><rect width="160" height="160" fill="none" stroke="#34495E" stroke-width="1.6"/></svg><figcaption><b>WAFT</b><span>released fine-grid model: one token per 2&times;2 pixels, four times as many tokens</span></figcaption></figure>
+        <figure class="su"><svg viewBox="-1 -1 162 162" aria-hidden="true"><defs><pattern id="su-grid-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.5" height="6" fill="#D64545" opacity=".6"/></pattern></defs><rect width="160" height="160" fill="#DDE5EC"/><path d="M0 70L0 80L0 90L0 100L0 110L0 120L0 130L0 140L0 150L0 160L10 160L20 160L30 160L40 160L50 160L60 160L70 160L80 160L90 160L100 160L110 160L120 160L130 160L140 160L150 160L160 160L160 150L160 140L150 140L140 140L140 130L130 130L130 120L120 120L120 110L110 110L110 100L110 90L100 90L100 80L90 80L90 70L80 70L70 70L60 70L60 60L50 60L40 60L30 60L30 50L20 50L20 40L10 40L10 30L0 30L0 40L0 50L0 60Z" fill="#F5B07A"/><path d="M10 0V160M0 10H160M20 0V160M0 20H160M30 0V160M0 30H160M40 0V160M0 40H160M50 0V160M0 50H160M60 0V160M0 60H160M70 0V160M0 70H160M80 0V160M0 80H160M90 0V160M0 90H160M100 0V160M0 100H160M110 0V160M0 110H160M120 0V160M0 120H160M130 0V160M0 130H160M140 0V160M0 140H160M150 0V160M0 150H160" stroke="#fff" stroke-opacity=".55" stroke-width=".6" fill="none"/><path d="M0 50L0 60L0 70L0 80L10 80L20 80L30 80L40 80L50 80L60 80L70 80L80 80L80 90L80 100L80 110L80 120L90 120L100 120L110 120L120 120L120 110L120 100L120 90L120 80L120 70L120 60L120 50L120 40L110 40L100 40L90 40L80 40L70 40L60 40L50 40L40 40L40 30L40 20L40 10L40 0L30 0L20 0L10 0L0 0L0 10L0 20L0 30L0 40ZM140 120L130 120L120 120L120 130L120 140L120 150L120 160L130 160L140 160L150 160L160 160L160 150L160 140L160 130L160 120L150 120Z" fill="url(#su-grid-hatch)"/><path d="M0 40h10M0 80h10M0 120h10M10 40h10M10 80h10M10 120h10M20 40h10M20 80h10M20 120h10M40 0v10M40 10v10M40 20v10M40 30v10M30 40h10M40 40v10M40 50v10M40 60v10M40 70v10M30 80h10M40 80v10M40 90v10M40 100v10M40 110v10M30 120h10M40 120v10M40 130v10M40 140v10M40 150v10M40 40h10M40 80h10M40 120h10M50 40h10M50 80h10M50 120h10M60 40h10M60 80h10M60 120h10M80 0v10M80 10v10M80 20v10M80 30v10M70 40h10M80 40v10M80 50v10M80 60v10M80 70v10M70 80h10M80 80v10M80 90v10M80 100v10M80 110v10M70 120h10M80 120v10M80 130v10M80 140v10M80 150v10M80 40h10M80 80h10M80 120h10M90 40h10M90 80h10M90 120h10M100 40h10M100 80h10M100 120h10M120 0v10M120 10v10M120 20v10M120 30v10M110 40h10M120 40v10M120 50v10M120 60v10M120 70v10M110 80h10M120 80v10M120 90v10M120 100v10M120 110v10M110 120h10M120 120v10M120 130v10M120 140v10M120 150v10M120 40h10M120 80h10M120 120h10M130 40h10M130 80h10M130 120h10M140 40h10M140 80h10M140 120h10M150 40h10M150 80h10M150 120h10" stroke="#34495E" stroke-width="1.6" stroke-linecap="square" fill="none"/><circle cx="20.0" cy="20.0" r="2.6" fill="#34495E"/><circle cx="20.0" cy="60.0" r="2.6" fill="#34495E"/><circle cx="20.0" cy="100.0" r="2.6" fill="#34495E"/><circle cx="20.0" cy="140.0" r="2.6" fill="#34495E"/><circle cx="60.0" cy="20.0" r="2.6" fill="#34495E"/><circle cx="60.0" cy="60.0" r="2.6" fill="#34495E"/><circle cx="60.0" cy="100.0" r="2.6" fill="#34495E"/><circle cx="60.0" cy="140.0" r="2.6" fill="#34495E"/><circle cx="100.0" cy="20.0" r="2.6" fill="#34495E"/><circle cx="100.0" cy="60.0" r="2.6" fill="#34495E"/><circle cx="100.0" cy="100.0" r="2.6" fill="#34495E"/><circle cx="100.0" cy="140.0" r="2.6" fill="#34495E"/><circle cx="140.0" cy="20.0" r="2.6" fill="#34495E"/><circle cx="140.0" cy="60.0" r="2.6" fill="#34495E"/><circle cx="140.0" cy="100.0" r="2.6" fill="#34495E"/><circle cx="140.0" cy="140.0" r="2.6" fill="#34495E"/><rect width="160" height="160" fill="none" stroke="#34495E" stroke-width="1.6"/></svg><figcaption><b>Fixed grid, same token count</b><span>one token per 4&times;4 pixels</span><em class="chip">+ local attention</em></figcaption></figure>
+        <figure class="su ours"><svg viewBox="-1 -1 162 162" aria-hidden="true"><defs><pattern id="su-dace-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.5" height="6" fill="#D64545" opacity=".6"/></pattern></defs><rect width="160" height="160" fill="#DDE5EC"/><path d="M0 70L0 80L0 90L0 100L0 110L0 120L0 130L0 140L0 150L0 160L10 160L20 160L30 160L40 160L50 160L60 160L70 160L80 160L90 160L100 160L110 160L120 160L130 160L140 160L150 160L160 160L160 150L160 140L150 140L140 140L140 130L130 130L130 120L120 120L120 110L110 110L110 100L110 90L100 90L100 80L90 80L90 70L80 70L70 70L60 70L60 60L50 60L40 60L30 60L30 50L20 50L20 40L10 40L10 30L0 30L0 40L0 50L0 60Z" fill="#F5B07A"/><path d="M10 0V160M0 10H160M20 0V160M0 20H160M30 0V160M0 30H160M40 0V160M0 40H160M50 0V160M0 50H160M60 0V160M0 60H160M70 0V160M0 70H160M80 0V160M0 80H160M90 0V160M0 90H160M100 0V160M0 100H160M110 0V160M0 110H160M120 0V160M0 120H160M130 0V160M0 130H160M140 0V160M0 140H160M150 0V160M0 150H160" stroke="#fff" stroke-opacity=".55" stroke-width=".6" fill="none"/><path d="M0 30h10M10 30v10M0 80h10M0 120h10M10 40h10M20 40v10M10 80h10M10 120h10M20 50h10M30 50v10M20 80h10M20 120h10M40 0v10M40 10v10M40 20v10M40 30v10M40 40v10M30 50h10M30 60h10M30 80h10M40 80v10M40 90v10M40 100v10M40 110v10M30 120h10M40 120v10M40 130v10M40 140v10M40 150v10M40 40h10M40 60h10M50 70v10M40 80h10M40 120h10M50 40h10M50 60h10M60 60v10M50 70h10M50 120h10M60 40h10M60 70h10M60 120h10M80 0v10M80 10v10M80 20v10M80 30v10M70 40h10M80 40v10M80 50v10M80 60v10M70 70h10M80 70v10M80 80v10M80 90v10M80 100v10M80 110v10M70 120h10M80 120v10M80 130v10M80 140v10M80 150v10M80 40h10M80 70h10M90 70v10M80 120h10M90 40h10M90 80h10M100 80v10M90 120h10M100 40h10M100 90h10M110 90v10M110 100v10M100 120h10M120 0v10M120 10v10M120 20v10M120 30v10M110 40h10M120 40v10M120 50v10M120 60v10M120 70v10M120 80v10M110 90h10M110 110h10M120 110v10M110 120h10M120 120v10M120 130v10M120 140v10M120 150v10M120 40h10M120 80h10M120 120h10M130 120v10M130 40h10M130 80h10M130 130h10M140 130v10M140 40h10M140 80h10M140 140h10M150 40h10M150 80h10M150 140h10" stroke="#34495E" stroke-width="1.6" stroke-linecap="square" fill="none"/><circle cx="20.0" cy="20.0" r="2.6" fill="#34495E"/><circle cx="20.0" cy="60.0" r="2.6" fill="#34495E"/><circle cx="20.0" cy="100.0" r="2.6" fill="#34495E"/><circle cx="20.0" cy="140.0" r="2.6" fill="#34495E"/><circle cx="60.0" cy="20.0" r="2.6" fill="#34495E"/><circle cx="60.0" cy="60.0" r="2.6" fill="#34495E"/><circle cx="60.0" cy="100.0" r="2.6" fill="#34495E"/><circle cx="60.0" cy="140.0" r="2.6" fill="#34495E"/><circle cx="100.0" cy="20.0" r="2.6" fill="#34495E"/><circle cx="100.0" cy="60.0" r="2.6" fill="#34495E"/><circle cx="100.0" cy="100.0" r="2.6" fill="#34495E"/><circle cx="100.0" cy="140.0" r="2.6" fill="#34495E"/><circle cx="140.0" cy="20.0" r="2.6" fill="#34495E"/><circle cx="140.0" cy="60.0" r="2.6" fill="#34495E"/><circle cx="140.0" cy="100.0" r="2.6" fill="#34495E"/><circle cx="140.0" cy="140.0" r="2.6" fill="#34495E"/><rect width="160" height="160" fill="none" stroke="#34495E" stroke-width="1.6"/></svg><figcaption><b>FATE</b><span>tokens on the same lattice, with learned support</span><em class="chip">+ local attention</em></figcaption></figure>
+        <figure class="su su-ctx"><svg viewBox="-1 -1 162 162" aria-hidden="true"><defs><pattern id="su-ctx-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.5" height="6" fill="#D64545" opacity=".6"/></pattern></defs><rect width="160" height="160" fill="#DDE5EC"/><path d="M0 70L0 80L0 90L0 100L0 110L0 120L0 130L0 140L0 150L0 160L10 160L20 160L30 160L40 160L50 160L60 160L70 160L80 160L90 160L100 160L110 160L120 160L130 160L140 160L150 160L160 160L160 150L160 140L150 140L140 140L140 130L130 130L130 120L120 120L120 110L110 110L110 100L110 90L100 90L100 80L90 80L90 70L80 70L70 70L60 70L60 60L50 60L40 60L30 60L30 50L20 50L20 40L10 40L10 30L0 30L0 40L0 50L0 60Z" fill="#F5B07A"/><path d="M10 0V160M0 10H160M20 0V160M0 20H160M30 0V160M0 30H160M40 0V160M0 40H160M50 0V160M0 50H160M60 0V160M0 60H160M70 0V160M0 70H160M80 0V160M0 80H160M90 0V160M0 90H160M100 0V160M0 100H160M110 0V160M0 110H160M120 0V160M0 120H160M130 0V160M0 130H160M140 0V160M0 140H160M150 0V160M0 150H160" stroke="#fff" stroke-opacity=".55" stroke-width=".6" fill="none"/><path d="M0 30h10M10 30v10M0 80h10M0 120h10M10 40h10M20 40v10M10 80h10M10 120h10M20 50h10M30 50v10M20 80h10M20 120h10M40 0v10M40 10v10M40 20v10M40 30v10M40 40v10M30 50h10M30 60h10M30 80h10M40 80v10M40 90v10M40 100v10M40 110v10M30 120h10M40 120v10M40 130v10M40 140v10M40 150v10M40 40h10M40 60h10M50 70v10M40 80h10M40 120h10M50 40h10M50 60h10M60 60v10M50 70h10M50 120h10M60 40h10M60 70h10M60 120h10M80 0v10M80 10v10M80 20v10M80 30v10M70 40h10M80 40v10M80 50v10M80 60v10M70 70h10M80 70v10M80 80v10M80 90v10M80 100v10M80 110v10M70 120h10M80 120v10M80 130v10M80 140v10M80 150v10M80 40h10M80 70h10M90 70v10M80 120h10M90 40h10M90 80h10M100 80v10M90 120h10M100 40h10M100 90h10M110 90v10M110 100v10M100 120h10M120 0v10M120 10v10M120 20v10M120 30v10M110 40h10M120 40v10M120 50v10M120 60v10M120 70v10M120 80v10M110 90h10M110 110h10M120 110v10M110 120h10M120 120v10M120 130v10M120 140v10M120 150v10M120 40h10M120 80h10M120 120h10M130 120v10M130 40h10M130 80h10M130 130h10M140 130v10M140 40h10M140 80h10M140 140h10M150 40h10M150 80h10M150 140h10" stroke="#34495E" stroke-opacity=".3" stroke-width="1.2" fill="none"/><rect x="60.0" y="60.0" width="80.0" height="80.0" fill="#fff" fill-opacity=".22"/><path d="M70 70L100 100M70 90L100 100M70 110L100 100M70 130L100 100M90 70L100 100M90 90L100 100M90 110L100 100M90 130L100 100M110 70L100 100M110 90L100 100M110 110L100 100M110 130L100 100M130 70L100 100M130 90L100 100M130 110L100 100M130 130L100 100" stroke="#5D6D7B" stroke-opacity=".6" stroke-width=".8" fill="none"/><circle cx="10.0" cy="10.0" r="1.5" fill="#8A9AA8"/><circle cx="10.0" cy="30.0" r="1.5" fill="#8A9AA8"/><circle cx="10.0" cy="50.0" r="1.5" fill="#8A9AA8"/><circle cx="10.0" cy="70.0" r="1.5" fill="#8A9AA8"/><circle cx="10.0" cy="90.0" r="1.5" fill="#8A9AA8"/><circle cx="10.0" cy="110.0" r="1.5" fill="#8A9AA8"/><circle cx="10.0" cy="130.0" r="1.5" fill="#8A9AA8"/><circle cx="10.0" cy="150.0" r="1.5" fill="#8A9AA8"/><circle cx="30.0" cy="10.0" r="1.5" fill="#8A9AA8"/><circle cx="30.0" cy="30.0" r="1.5" fill="#8A9AA8"/><circle cx="30.0" cy="50.0" r="1.5" fill="#8A9AA8"/><circle cx="30.0" cy="70.0" r="1.5" fill="#8A9AA8"/><circle cx="30.0" cy="90.0" r="1.5" fill="#8A9AA8"/><circle cx="30.0" cy="110.0" r="1.5" fill="#8A9AA8"/><circle cx="30.0" cy="130.0" r="1.5" fill="#8A9AA8"/><circle cx="30.0" cy="150.0" r="1.5" fill="#8A9AA8"/><circle cx="50.0" cy="10.0" r="1.5" fill="#8A9AA8"/><circle cx="50.0" cy="30.0" r="1.5" fill="#8A9AA8"/><circle cx="50.0" cy="50.0" r="1.5" fill="#8A9AA8"/><circle cx="50.0" cy="70.0" r="1.5" fill="#8A9AA8"/><circle cx="50.0" cy="90.0" r="1.5" fill="#8A9AA8"/><circle cx="50.0" cy="110.0" r="1.5" fill="#8A9AA8"/><circle cx="50.0" cy="130.0" r="1.5" fill="#8A9AA8"/><circle cx="50.0" cy="150.0" r="1.5" fill="#8A9AA8"/><circle cx="70.0" cy="10.0" r="1.5" fill="#8A9AA8"/><circle cx="70.0" cy="30.0" r="1.5" fill="#8A9AA8"/><circle cx="70.0" cy="50.0" r="1.5" fill="#8A9AA8"/><circle cx="70.0" cy="150.0" r="1.5" fill="#8A9AA8"/><circle cx="90.0" cy="10.0" r="1.5" fill="#8A9AA8"/><circle cx="90.0" cy="30.0" r="1.5" fill="#8A9AA8"/><circle cx="90.0" cy="50.0" r="1.5" fill="#8A9AA8"/><circle cx="90.0" cy="150.0" r="1.5" fill="#8A9AA8"/><circle cx="110.0" cy="10.0" r="1.5" fill="#8A9AA8"/><circle cx="110.0" cy="30.0" r="1.5" fill="#8A9AA8"/><circle cx="110.0" cy="50.0" r="1.5" fill="#8A9AA8"/><circle cx="110.0" cy="150.0" r="1.5" fill="#8A9AA8"/><circle cx="130.0" cy="10.0" r="1.5" fill="#8A9AA8"/><circle cx="130.0" cy="30.0" r="1.5" fill="#8A9AA8"/><circle cx="130.0" cy="50.0" r="1.5" fill="#8A9AA8"/><circle cx="130.0" cy="150.0" r="1.5" fill="#8A9AA8"/><circle cx="150.0" cy="10.0" r="1.5" fill="#8A9AA8"/><circle cx="150.0" cy="30.0" r="1.5" fill="#8A9AA8"/><circle cx="150.0" cy="50.0" r="1.5" fill="#8A9AA8"/><circle cx="150.0" cy="70.0" r="1.5" fill="#8A9AA8"/><circle cx="150.0" cy="90.0" r="1.5" fill="#8A9AA8"/><circle cx="150.0" cy="110.0" r="1.5" fill="#8A9AA8"/><circle cx="150.0" cy="130.0" r="1.5" fill="#8A9AA8"/><circle cx="150.0" cy="150.0" r="1.5" fill="#8A9AA8"/><circle cx="70" cy="70" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="70" cy="90" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="70" cy="110" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="70" cy="130" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="90" cy="70" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="90" cy="90" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="90" cy="110" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="90" cy="130" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="110" cy="70" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="110" cy="90" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="110" cy="110" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="110" cy="130" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="130" cy="70" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="130" cy="90" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="130" cy="110" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><circle cx="130" cy="130" r="2.1" fill="#8A9AA8" stroke="#fff" stroke-width=".7"/><rect x="60.0" y="60.0" width="80.0" height="80.0" fill="none" stroke="#34495E" stroke-width="1.2" stroke-dasharray="4 3"/><path d="M80 80L80 90L80 100L80 110L80 120L90 120L100 120L110 120L120 120L120 110L110 110L110 100L110 90L100 90L100 80L90 80L90 70L80 70Z" fill="none" stroke="#fff" stroke-width="5" stroke-opacity=".85" stroke-linejoin="round"/><path d="M80 80L80 90L80 100L80 110L80 120L90 120L100 120L110 120L120 120L120 110L110 110L110 100L110 90L100 90L100 80L90 80L90 70L80 70Z" fill="none" stroke="#34495E" stroke-width="2.6" stroke-linejoin="round"/><circle cx="100" cy="100" r="3.6" fill="#34495E" stroke="#fff" stroke-width="1.2"/><rect width="160" height="160" fill="none" stroke="#34495E" stroke-width="1.6"/></svg><figcaption><b>Local attention</b><span>each token's pooled feature attends to the nearby dense features in a window</span></figcaption></figure>
+      </div>
+      <div class="unit-legend" aria-hidden="true"><span class="ul ul-obj">moving object</span><span class="ul ul-unit">token</span><span class="ul ul-mixed">token that mixes object and background</span><span class="ul ul-feat">dense feature</span></div>
+      <figcaption>All models share the DINOv3 backbone and its dense features (one per 2&times;2 pixels), WAFT's iterative
+        matching and refinement, and the training data and recipe.</figcaption>
+    </figure>
+
+    <figure class="card fig" id="fig-controls">
+      <div class="fig-head">
+        <div class="fig-title" id="ctl-title">FATE has the lowest error on all six metrics</div>
+        <div class="pills small" role="group" aria-label="Comparison">
+          <button class="pill" aria-pressed="true" data-ctl="grid">Accuracy</button>
+          <button class="pill" aria-pressed="false" data-ctl="gain">Local attention</button>
+          <button class="pill" aria-pressed="false" data-ctl="recon">Motion retention</button>
+          <button class="pill" aria-pressed="false" data-ctl="updates">Compute</button>
+        </div>
+      </div>
+
+      <div class="ctl-panel" data-panel="grid" data-title="FATE has the lowest error on all six metrics">
+        <div class="legend-inline"><span class="lg sq waft">WAFT, four times as many tokens</span><span class="lg sq h4">Fixed grid, same token count</span><span class="lg sq dace">FATE</span><span class="lg-ctx">lower is better</span></div>
+        <div class="chart" id="chart-grid"></div>
+        <p class="cap">The fixed grid and FATE both use local attention. Without local attention in either system, FATE
+          still improves five of six metrics, so adding context to the fixed grid does not reproduce the adaptive
+          system's accuracy.</p>
+        <details class="numbers" data-table="grids"><summary>Show the numbers</summary></details>
+      </div>
+
+      <div class="ctl-panel" data-panel="gain" data-title="Adaptive tokens gain more from the same local attention" hidden>
+        <div class="legend-inline"><span class="lg sq h4">Fixed grid, same token count</span><span class="lg sq dace">FATE</span><span class="lg-ctx"><i></i>without &rarr; <i class="f"></i>with local attention</span></div>
+        <div class="chart" id="chart-gain"></div>
+        <p class="cap">EPE on pixels whose target is occluded or out of frame; the numbers give the change, and all
+          panels share one scale. Attention helps FATE more on every dataset and rendering.</p>
+      </div>
+
+      <div class="ctl-panel" data-panel="recon" data-title="Adaptive tokens retain the motion they represent" hidden>
+        <div class="legend-inline"><span class="lg sq h4">Fixed grid, same token count</span><span class="lg sq dace">FATE</span><span class="lg-ctx">lower is better</span></div>
+        <div class="chart" id="chart-recon"></div>
+        <p class="cap">Predicted token flow is replaced with ground-truth flow pooled into each model's tokens, then mapped
+          back to pixels with its own image-predicted weights: FATE's assignments, or the fixed grid's convex
+          upsampling. The remaining error is motion detail lost through pooling and readout, separate from matching.
+          Neither model is retrained.</p>
+      </div>
+
+      <div class="ctl-panel" data-panel="updates" data-title="Fewer tokens leave room for richer processing" hidden>
+        <div class="pills small sub-pills" role="group" aria-label="Metric" data-group="up-metric">
+          <button class="pill" aria-pressed="true" data-metric="sintelF">Sintel Final</button>
+          <button class="pill" aria-pressed="false" data-metric="sintelC">Sintel Clean</button>
+          <button class="pill" aria-pressed="false" data-metric="kittiEPE">KITTI EPE</button>
+          <button class="pill" aria-pressed="false" data-metric="kittiFl">KITTI Fl</button>
+          <button class="pill" aria-pressed="false" data-metric="thingsC">Things Clean</button>
+          <button class="pill" aria-pressed="false" data-metric="thingsF">Things Final</button>
+        </div>
+        <div class="chart" id="chart-updates"></div>
+        <p class="cap">Each model is trained with five refinement updates and run here with one to five, without
+          retraining (numbers on the points). Four-update FATE improves all six metrics over five-update WAFT at 706 versus 732
+          GMACs per 540&times;960 image pair. Fewer tokens make wider refinement and local attention affordable: FATE
+          refines a state twice as wide as WAFT&rsquo;s, which on WAFT&rsquo;s fine grid would cost 1,313 GMACs.
+          FATE-64, trained separately, uses WAFT&rsquo;s 64-dimensional width.</p>
+        <details class="numbers" data-table="updates"><summary>Show the numbers</summary></details>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================================================ CONCLUSION + CITE -->
+<section class="section alt" id="conclusion">
+  <div class="wrap narrow">
+    <div class="eyebrow">Conclusion</div>
+    <p class="conclusion">FATE learns the tokens of correspondence for dense optical flow. Shared pixel-to-token
+      assignments pool matching features and distribute token flow to pixels, and flow supervision learns the
+      assignments and matching features jointly. Motion is estimated on coarser tokens, while image evidence stays
+      dense. <b>Adaptive tokens improve both the use of local context and the preservation of pixel motion.</b></p>
+  </div>
+</section>
+
+<section id="citation" class="section">
+  <div class="wrap narrow">
+    <h2>Citation</h2>
+    <div class="bibtex card">
+      <button class="copy" id="copy-bib" type="button">Copy</button>
+      <pre id="bibtex"><code>@inproceedings{hsieh2026fate,
+  title     = {Dense Flow from Adaptive Correspondence},
+  author    = {Hsieh, Cheng-Lin and Yu, Stella X.},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2026}
+}</code></pre>
+    </div>
+    <h3 class="sub">Acknowledgements</h3>
+    <p class="small-text">This project was supported in part by NSF grant 2313151, with additional computing resources
+      provided through NAIRR Pilot CIS240421 and CIS240431. The authors thank
+      <a href="https://github.com/fuy34/superpixel_fcn">SpixelFCN</a> and <a href="https://github.com/princeton-vl/WAFT">WAFT</a>
+      for sharing their code.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>&copy; 2026 Cheng-Lin Hsieh &amp; Stella X. Yu &middot; University of Michigan</span>
+    <span><a href="https://github.com/chenglinh/FATE">Code</a> &middot; <a href="https://chenglinh.github.io/">Homepage</a></span>
+  </div>
+</footer>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+<script src="static/vendor/d3/d3.min.js"></script>
+<script defer src="static/vendor/katex/katex.min.js"></script>
+<script defer src="static/vendor/katex/contrib/auto-render.min.js"></script>
+<script src="static/js/data.js"></script>
+<script src="static/js/charts.js"></script>
+<script src="static/js/main.js"></script>
+</body>
+</html>
