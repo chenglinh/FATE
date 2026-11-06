@@ -4,18 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FATE: Flow from Adaptive Token Estimation (NeurIPS 2026)</title>
-  <meta name="description" content="FATE learns which pixels should be matched together and represented by a shared motion estimate: shared soft pixel-to-token assignments pool matching features and return predicted flow to pixels. Lowest zero-shot Sintel Final and KITTI error among the compared methods.">
+  <meta name="description" content="FATE learns adaptive correspondence tokens whose supports expand within coherent regions and contract near motion boundaries, then reconstructs precise pixel flow. State-of-the-art zero-shot accuracy on Sintel Final and KITTI.">
   <meta name="author" content="Cheng-Lin Hsieh, Stella X. Yu">
   <meta property="og:type" content="website">
   <meta property="og:title" content="FATE: Flow from Adaptive Token Estimation">
-  <meta property="og:description" content="Learning the tokens of correspondence for dense optical flow. NeurIPS 2026.">
+  <meta property="og:description" content="Adaptive correspondence tokens for dense optical flow. NeurIPS 2026.">
   <meta property="og:url" content="https://chenglinh.github.io/FATE/">
   <meta property="og:image" content="https://chenglinh.github.io/FATE/static/img/social.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="FATE: Flow from Adaptive Token Estimation">
-  <meta name="twitter:description" content="Learning the tokens of correspondence for dense optical flow. NeurIPS 2026.">
+  <meta name="twitter:description" content="Adaptive correspondence tokens for dense optical flow. NeurIPS 2026.">
   <meta name="twitter:image" content="https://chenglinh.github.io/FATE/static/img/social.jpg">
   <link rel="icon" href="static/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="static/fonts/eb-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -110,17 +110,19 @@
 <section class="wrap narrow abstract" aria-labelledby="abstract-h">
   <details class="card fold-card">
   <summary><h2 id="abstract-h">Abstract</h2></summary>
-  <p>Reliable optical flow requires combining evidence across pixels while preserving distinct pixel motions. Modern
-    networks strengthen matching on regular feature grids, while the relationship between each token's estimated motion
-    and the pixels it represents remains implicit. We introduce <em>Dense flow from Adaptive CorrespondencE</em>
-    (FATE), which learns which pixels should be matched together and represented by a shared motion estimate. Shared
-    soft pixel-to-token assignments pool contextual features, define token-flow targets, and distribute predictions to
-    pixels. Flow supervision learns the assignments and matching features jointly, with pixel-level grouping and
-    correspondence over fewer tokens. Under the standard zero-shot protocol, FATE achieves the lowest average flow error
-    on Sintel Final and KITTI among the compared methods. We also find that pixels with occluded or out-of-frame
-    targets account for roughly half of a fine-grid baseline's average flow error despite occupying a small fraction
-    of valid pixels. FATE reduces error in these regions and near motion boundaries. Design studies support improved
-    use of context and more faithful representation of pixel motion.</p>
+  <p>Optical flow requires reliable matching from sufficient visual context while estimating precise motion at every
+    pixel. State-of-the-art methods such as WAFT match on fixed grids and then upsample flow, without explicitly linking
+    how visual evidence is gathered for matching to how motion is reconstructed at each pixel.</p>
+  <p>Our key insight is to decouple correspondence scale from flow resolution while maintaining consistent visual
+    grounding for matching and reconstruction. We realize this in <em>Flow from Adaptive Token Estimation</em> (FATE),
+    which learns adaptive correspondence tokens whose supports expand within coherent regions and contract near motion
+    boundaries. Shared soft pixel-to-token associations pool features for matching and combine coarse token motions into
+    precise pixel flow. Flow supervision jointly trains grouping, matching, and flow estimation without segmentation
+    labels, so the model can anticipate which pixels are likely to move together from appearance alone.</p>
+  <p>Trained on FlyingChairs and FlyingThings3D, FATE achieves state-of-the-art zero-shot accuracy on Sintel Final and
+    KITTI. For visible pixels, it improves accuracy within coherent regions and more near motion boundaries. Its largest
+    gains occur where direct matches are unavailable: occluded or out-of-frame pixels account for roughly 10% of valid
+    pixels but about 50% of WAFT's total error.</p>
   </details>
 </section>
 
