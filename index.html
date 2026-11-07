@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FATE: Dense Flow from Adaptive Correspondence (NeurIPS 2026)</title>
-  <meta name="description" content="FATE learns adaptive correspondence tokens whose supports expand within coherent regions and contract near motion boundaries, then reconstructs precise pixel flow. State-of-the-art zero-shot accuracy on Sintel Final and KITTI.">
+  <meta name="description" content="FATE matches pixels that are likely to move together, then uses the same grouping to reconstruct precise flow. Lowest zero-shot Sintel Final and KITTI error among the compared methods.">
   <meta name="author" content="Cheng-Lin Hsieh, Stella X. Yu">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Dense Flow from Adaptive Correspondence">
@@ -29,11 +29,10 @@
   <div class="topnav-inner">
     <a class="brand" href="#top">FATE</a>
     <div class="navlinks">
-      <a href="#problem">Problem</a>
+      <a href="#tokens">Idea</a>
+      <a href="#results">Evidence</a>
       <a href="#method">Method</a>
-      <a href="#tokens">Learned tokens</a>
-      <a href="#results">Results</a>
-      <a href="#analysis">Analysis</a>
+      <a href="#analysis">Comparisons</a>
       <a href="#citation">Cite</a>
     </div>
   </div>
@@ -82,8 +81,9 @@
         <div class="lens" aria-hidden="true"></div>
       </div>
       <figcaption>
-        <b>FATE learns which pixels each correspondence token represents.</b> White contours outline the learned tokens:
-        they follow object boundaries and fine structures, and each token returns its predicted flow to its own pixels.
+        <b>Pixels likely to move together share one match, then draw on that motion.</b>
+        The contours are FATE's learned tokens. They spread across a coherent surface and sharpen where motion changes,
+        and the same grouping produces the flow on the right.
         Drag the slider; hover to magnify. <a href="#flow-colors">How to read flow colors</a>
       </figcaption>
     </figure>
@@ -93,17 +93,19 @@
 <main id="main">
 
 <section class="tldr wrap">
-  <p class="tldr-text"><span class="kicker">TL;DR</span> Optical flow must combine evidence across pixels while
-    preserving distinct pixel motions. Modern networks match on regular feature grids, where the link between each
-    token's motion estimate and the pixels it represents stays implicit. <b>FATE learns which pixels to match together
-    and represent by one shared motion estimate</b>: the same soft pixel-to-token assignments gather each token's
-    matching evidence and return its predicted flow to those pixels. The gains are largest <b>where direct matches
-    are missing</b> and <b>near motion boundaries</b>.</p>
+  <p class="tldr-text"><span class="kicker">Idea</span> Reliable matching needs context; precise flow needs to stay local.
+    FATE separates the two. <b>Correspondence runs on adaptive tokens, coarser than the pixels, and the same grouping
+    turns those token motions back into dense flow.</b></p>
+  <div class="ideas">
+    <div class="idea"><b>1. Match where the evidence is.</b> A token gathers the pixels likely to move with it, so a weak or hidden pixel is not matched on its own.</div>
+    <div class="idea"><b>2. Use that grouping twice.</b> The same associations pool features for the match and combine token motions into each pixel's flow.</div>
+    <div class="idea"><b>3. Sharpen at boundaries.</b> Supports spread inside a coherent region and tighten where motion changes, so one token does not mix two surfaces.</div>
+  </div>
   <div class="stats">
-    <div class="stat"><div class="stat-num"><span data-count="2.10" data-dec="2">2.10</span><span class="stat-sep">/</span><span data-count="3.11" data-dec="2">3.11</span></div><div class="stat-label">Sintel Final / KITTI EPE</div><div class="stat-note">lowest zero-shot error among the compared methods</div></div>
-    <div class="stat"><div class="stat-num">42&ndash;52%</div><div class="stat-label">of a fine-grid baseline&rsquo;s error</div><div class="stat-note">comes from the 6&ndash;14% of pixels whose target is occluded or out of frame</div></div>
-    <div class="stat"><div class="stat-num">1.2&ndash;2.6<span class="stat-unit">px</span></div><div class="stat-label">lower EPE where direct matches are missing</div><div class="stat-note">than WAFT, zero-shot on Sintel and KITTI; 0.25&ndash;0.46&nbsp;px overall</div></div>
-    <div class="stat"><div class="stat-num">0.7&ndash;1.5<span class="stat-unit">px</span></div><div class="stat-label">lower EPE near motion boundaries</div><div class="stat-note">than WAFT, whose finer grid uses four times as many tokens</div></div>
+    <div class="stat"><div class="stat-num"><span data-count="2.10" data-dec="2">2.10</span><span class="stat-sep">/</span><span data-count="3.11" data-dec="2">3.11</span></div><div class="stat-label">Sintel Final / KITTI EPE</div><div class="stat-note">lowest zero-shot error among the compared published methods</div></div>
+    <div class="stat"><div class="stat-num">6&ndash;14%</div><div class="stat-label">of pixels, about half the error</div><div class="stat-note">occluded or out-of-frame pixels are 6.4&ndash;13.9% of valid pixels and 41.9&ndash;52.7% of WAFT's error</div></div>
+    <div class="stat"><div class="stat-num">1.2&ndash;2.6<span class="stat-unit">px</span></div><div class="stat-label">lower EPE with no direct match</div><div class="stat-note">than WAFT on Sintel and KITTI; coherent pixels gain at most 0.53 px</div></div>
+    <div class="stat"><div class="stat-num">4 <span class="stat-unit">steps</span></div><div class="stat-label">beats five-step WAFT</div><div class="stat-note">lower error on every reported result, at 706 versus 732 GMACs</div></div>
   </div>
 </section>
 
@@ -111,29 +113,62 @@
   <details class="card fold-card">
   <summary><h2 id="abstract-h">Abstract</h2></summary>
   <p>Optical flow requires reliable matching from sufficient visual context while estimating precise motion at every
-    pixel. State-of-the-art methods such as WAFT match on fixed grids and then upsample flow, without explicitly linking
-    how visual evidence is gathered for matching to how motion is reconstructed at each pixel.</p>
-  <p>Our key insight is to decouple correspondence scale from flow resolution while maintaining consistent visual
-    grounding for matching and reconstruction. We realize this in <em>Flow from Adaptive Token Estimation</em> (FATE),
-    which learns adaptive correspondence tokens whose supports expand within coherent regions and contract near motion
-    boundaries. Shared soft pixel-to-token associations pool features for matching and combine coarse token motions into
-    precise pixel flow. Flow supervision jointly trains grouping, matching, and flow estimation without segmentation
-    labels, so the model can anticipate which pixels are likely to move together from appearance alone.</p>
+    pixel. Methods such as WAFT match on fixed grids and then upsample flow, without explicitly linking how visual
+    evidence is gathered for matching to how motion is distributed to each pixel.</p>
+  <p>Pixels likely to move together can share visual evidence for matching and draw on the same motion estimates. That
+    consistent grounding lets correspondence operate at a coarser scale than the flow. FATE learns adaptive
+    correspondence tokens whose supports spread within coherent regions to gather context and sharpen at motion
+    boundaries to keep flow precise. Shared soft pixel-to-token associations pool features for matching and combine
+    coarse token motions into precise pixel flow. Flow supervision trains the grouping, the matching, and the flow
+    together, with no segmentation labels, so the model predicts which pixels are likely to move together from
+    appearance alone.</p>
   <p>Trained on FlyingChairs and FlyingThings3D, FATE achieves state-of-the-art zero-shot accuracy on Sintel Final and
-    KITTI. For visible pixels, it improves accuracy within coherent regions and more near motion boundaries. Its largest
-    gains occur where direct matches are unavailable: occluded or out-of-frame pixels account for roughly 10% of valid
-    pixels but about 50% of WAFT's total error.</p>
+    KITTI. For visible pixels it improves accuracy within coherent regions, and more so near motion boundaries. Its
+    largest gains occur where direct matches are unavailable.</p>
   </details>
 </section>
 
-<!-- ============================================================ PROBLEM -->
-<section id="problem" class="section">
+<!-- ============================================================ LEARNED UNITS -->
+<section id="tokens" class="section">
   <div class="wrap narrow sec-head">
-    <div class="eyebrow">The problem</div>
-    <h2>Share evidence, preserve distinct pixel motions</h2>
-    <p class="lead">Weak texture, repeated patterns and occlusion make a pixel's own match ambiguous or missing, so
-      evidence must come from its surroundings. Yet neighboring pixels may move differently. Reliable flow shares
-      evidence to resolve ambiguity while preserving motion boundaries.</p>
+    <div class="eyebrow">The idea, in the image</div>
+    <h2>Spread inside a region, sharpen at a boundary</h2>
+    <p class="lead">These are the learned tokens on real zero-shot images. Groups follow a slat edge and a body outline.
+      A fixed cell can sit on two motions; the learned support does not. Dashed squares are the nominal grid cells.</p>
+  </div>
+  <div class="wrap">
+    <figure class="card fig" id="groups">
+      <div class="fig-head"><div class="fig-title">Learned groups and selected tokens</div></div>
+      <div class="regions" data-connectors='[{"c":"context","from":"r1-image1","box":[0.2321,0.3929,0.5179,0.6786],"fc":["ne","se"],"to":"r1-groups","tc":["nw","sw"]},{"c":"detail","from":"r1-groups","box":[0.1719,0.25,0.3281,0.5625],"fc":["ne","se"],"to":"r1-unit","tc":["nw","sw"]}]'>
+        <div class="region-row">
+          <figure class="pm" data-panel="r1-image1"><figcaption>Image 1</figcaption><img src="static/img/units/r1_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
+          <figure class="pm" data-panel="r1-groups"><figcaption>Learned groups</figcaption><img src="static/img/units/r1_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
+          <figure class="pm" data-panel="r1-unit"><figcaption>Token support</figcaption><img src="static/img/units/r1_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
+          <figure class="pm"><figcaption>GT flow (crop)</figcaption><img src="static/img/units/r1_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
+          <figure class="pm"><figcaption>GT flow (detail)</figcaption><img src="static/img/units/r1_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
+        </div>
+        <div class="region-row">
+          <figure class="pm"><img src="static/img/units/r2_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
+          <figure class="pm"><img src="static/img/units/r2_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
+          <figure class="pm"><img src="static/img/units/r2_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
+          <figure class="pm"><img src="static/img/units/r2_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
+          <figure class="pm"><img src="static/img/units/r2_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
+        </div>
+      </div>
+      <figcaption>Each row is one scene: the image, all learned groups, one token's support, then the same two views on
+        ground-truth flow. White contours mark the dominant assignment. The model keeps soft weights. Gold and blue
+        boxes are the two enlargement levels.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================================================ PROBLEM -->
+<section id="problem" class="section alt">
+  <div class="wrap narrow sec-head">
+    <div class="eyebrow">What changes</div>
+    <h2>The gains show up where a pixel cannot be matched alone</h2>
+    <p class="lead">A thin structure, a surface hidden in the second frame, and a car whose lighting changes.
+      All three predictions are zero-shot. Detail, WAFT, FATE, then ground truth.</p>
   </div>
 
   <div class="wrap">
@@ -141,7 +176,7 @@
       <div class="premise">
         <div class="premise-col" data-connectors='[{"c":"context","from":"a-full","box":[0.7266,0.2798,0.8672,0.5275],"fc":["sw","se"],"to":"a-image1","tc":["nw","ne"],"knock":"a-image1"},{"c":"detail","from":"a-image1","box":[0.3889,0.3519,0.6111,0.6481],"fc":["sw","se"],"to":"a-detail","tc":["nw","ne"],"knock":"a-detail"}]'>
           <div class="premise-title">Fine structures</div>
-          <p class="premise-desc">A fine structure moves differently from its surroundings.</p>
+          <p class="premise-desc">A thin protrusion moves unlike the surfaces on both sides. FATE keeps its motion distinct.</p>
           <figure class="pm pm-full" data-panel="a-full"><figcaption>Image 1 (full)</figcaption><img src="static/img/problem/a_full.webp" width="1080" height="460" loading="lazy" alt="Fine structures: Image 1, full frame"></figure>
           <div class="pm-row two">
             <figure class="pm" data-panel="a-image1"><figcaption>Image 1</figcaption><img src="static/img/problem/a_image1.webp" width="645" height="484" loading="lazy" alt="Image 1 crop"></figure>
@@ -156,7 +191,7 @@
         </div>
         <div class="premise-col">
           <div class="premise-title">Occlusion</div>
-          <p class="premise-desc">A wing hides a background patch in Image&nbsp;2, removing its visible match.</p>
+          <p class="premise-desc">Leaves hidden by a wing in Image&nbsp;2 have no match. Their tokens infer motion from the surrounding context.</p>
           <figure class="pm pm-full"><figcaption>Image 1 (full)</figcaption><img src="static/img/problem/b_full.webp" width="1080" height="460" loading="lazy" alt="Occlusion: Image 1, full frame"></figure>
           <div class="pm-row two">
             <figure class="pm"><figcaption>Image 1</figcaption><img src="static/img/problem/b_image1.webp" width="645" height="484" loading="lazy" alt="Image 1 crop"></figure>
@@ -170,8 +205,8 @@
           </div>
         </div>
         <div class="premise-col">
-          <div class="premise-title">Shared motion</div>
-          <p class="premise-desc">Different appearances across the car body share coherent motion.</p>
+          <div class="premise-title">Misleading appearance</div>
+          <p class="premise-desc">Sunlight and shadows on the car change between frames. WAFT follows them; FATE keeps the car's motion coherent.</p>
           <figure class="pm pm-full"><figcaption>Image 1 (full)</figcaption><img src="static/img/problem/c_full.webp" width="1080" height="327" loading="lazy" alt="Shared motion: Image 1, full frame"></figure>
           <div class="pm-row two">
             <figure class="pm"><figcaption>Image 1</figcaption><img src="static/img/problem/c_image1.webp" width="645" height="484" loading="lazy" alt="Image 1 crop"></figure>
@@ -185,34 +220,32 @@
           </div>
         </div>
       </div>
-      <figcaption>Boxes locate enlargements framed in the same color: context crops in gold, then detail and flow
-        crops in blue. Dashed boxes repeat Image&nbsp;1 coordinates in Image&nbsp;2. The bottom row compares
-        zero-shot WAFT and FATE predictions with ground-truth flow (GT). Colors share a scale per example; gray marks unlabeled
-        GT.</figcaption>
+      <figcaption>Gold boxes mark the context crop and blue boxes the detail. Dashed boxes repeat Image&nbsp;1
+        coordinates in Image&nbsp;2. The bottom row is detail, WAFT, FATE, ground truth. Colors share a scale per
+        example; gray marks unlabeled ground truth.</figcaption>
     </figure>
   </div>
 
   <div class="wrap narrow">
-    <h3 class="sub">FATE learns which pixels to match together</h3>
-    <p>FATE learns how each token's motion estimate relates to the pixels it represents, a relation that regular grids
-      leave implicit. One set of soft pixel-to-token assignments, predicted at image resolution, plays three roles:</p>
+    <h3 class="sub">One matrix, two directions</h3>
+    <p>Each pixel has a soft association with nearby tokens. Read down a column, and those weights are the token's
+      support. Read across a row, and they say which token motions that pixel should combine.</p>
     <ul class="roles">
-      <li><b>Pool</b> dense image features into each token's matching features.</li>
-      <li><b>Define</b> each token's flow target from the ground-truth flow of its pixels.</li>
-      <li><b>Distribute</b> each token's predicted flow back to its pixels.</li>
+      <li><b>Pool</b> image features over each token's support, then match the tokens.</li>
+      <li><b>Combine</b> the resulting token motions back into pixel flow with the same weights.</li>
+      <li><b>Learn it from flow alone.</b> No segmentation labels. At test time the groups come from appearance.</li>
     </ul>
-    <p>Each token can draw on broader context, while its estimated motion stays tied to the pixels it represents.</p>
   </div>
 </section>
 
 <!-- ============================================================ METHOD -->
-<section id="method" class="section alt">
+<section id="method" class="section">
   <div class="wrap narrow sec-head">
     <div class="eyebrow">Method</div>
-    <h2>FATE jointly learns grouping and matching</h2>
-    <p class="lead">Matching features and flow are estimated in token space, then returned to pixels through the same
-      assignments. Grouping combines pixel evidence for matching; learning to match shapes the grouping and its
-      features.</p>
+    <h2>Coarse matches, then precise pixel flow</h2>
+    <p class="lead">Tokens are anchored on a grid four times coarser than WAFT's, but their supports are predicted from
+      the image. Local attention adds nearby context. Iterative matching estimates one motion per token, and each pixel
+      can mix several of those motions, so a token's pixels need not move as one piece.</p>
   </div>
 
   <div class="wrap">
@@ -318,50 +351,14 @@
   </div>
 </section>
 
-<!-- ============================================================ LEARNED UNITS -->
-<section id="tokens" class="section">
-  <div class="wrap narrow sec-head">
-    <div class="eyebrow">Learned tokens</div>
-    <h2>Tokens follow motion structure</h2>
-    <p class="lead">Each token's support is learned through flow prediction. In the zero-shot model, neighboring groups follow
-      object boundaries, separating foreground from background motion, and single tokens adapt beyond their grid
-      cells.</p>
-  </div>
-  <div class="wrap">
-    <figure class="card fig" id="groups">
-      <div class="fig-head"><div class="fig-title">Learned groups and selected tokens</div></div>
-      <div class="regions" data-connectors='[{"c":"context","from":"r1-image1","box":[0.2321,0.3929,0.5179,0.6786],"fc":["ne","se"],"to":"r1-groups","tc":["nw","sw"]},{"c":"detail","from":"r1-groups","box":[0.1719,0.25,0.3281,0.5625],"fc":["ne","se"],"to":"r1-unit","tc":["nw","sw"]}]'>
-        <div class="region-row">
-          <figure class="pm" data-panel="r1-image1"><figcaption>Image 1</figcaption><img src="static/img/units/r1_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
-          <figure class="pm" data-panel="r1-groups"><figcaption>Learned groups</figcaption><img src="static/img/units/r1_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
-          <figure class="pm" data-panel="r1-unit"><figcaption>Token support</figcaption><img src="static/img/units/r1_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
-          <figure class="pm"><figcaption>GT flow (crop)</figcaption><img src="static/img/units/r1_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
-          <figure class="pm"><figcaption>GT flow (detail)</figcaption><img src="static/img/units/r1_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
-        </div>
-        <div class="region-row">
-          <figure class="pm"><img src="static/img/units/r2_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
-          <figure class="pm"><img src="static/img/units/r2_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
-          <figure class="pm"><img src="static/img/units/r2_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
-          <figure class="pm"><img src="static/img/units/r2_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
-          <figure class="pm"><img src="static/img/units/r2_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
-        </div>
-      </div>
-      <figcaption>Each row shows one scene's learned groups and one selected token, then both on ground-truth flow.
-        Neighboring groups follow slat edges and a bent body outline; the selected tokens follow an outer slat edge
-        and the body contour, beyond their nominal grid cells (dashed). White contours separate pixels with different
-        strongest token assignments; the model keeps soft weights. Gold and blue boxes locate the two enlargement levels, framed in
-        the same color.</figcaption>
-    </figure>
-  </div>
-</section>
-
 <!-- ============================================================ RESULTS -->
 <section id="results" class="section alt">
   <div class="wrap narrow sec-head">
-    <div class="eyebrow">Results</div>
+    <div class="eyebrow">Evidence</div>
     <h2>Lowest zero-shot error on Sintel Final and KITTI</h2>
-    <p class="lead">All models train on the synthetic FlyingChairs and FlyingThings3D datasets and are tested on
-      Sintel and KITTI without target-domain flow training.</p>
+    <p class="lead">Every method here trains on FlyingChairs, then FlyingThings3D. Sintel and KITTI have no target-domain
+      flow training. FATE is lower than WAFT in every accuracy column, and lower than every compared method on Sintel
+      Final and KITTI EPE.</p>
   </div>
   <div class="wrap">
     <figure class="card fig" id="fig-zeroshot">
@@ -447,8 +444,9 @@
   <div class="wrap narrow sec-head">
     <div class="eyebrow">Analysis</div>
     <h2>Adaptive tokens beat fixed grids at the same token count</h2>
-    <p class="lead">To test the formulation itself, we compare FATE with fixed-grid controls that share its backbone,
-      feature resolution, token count, refinement framework, and training recipe.</p>
+    <p class="lead">Released WAFT matches four times as many locations. WAFT-H/4 removes that difference: the same token
+      count, backbone, and training, but fixed cells instead of learned support. The gain remains, so it is not from
+      using a coarser grid.</p>
   </div>
   <div class="wrap">
     <figure class="card fig" id="fig-setup">
@@ -525,10 +523,10 @@
 <section class="section alt" id="conclusion">
   <div class="wrap narrow">
     <div class="eyebrow">Conclusion</div>
-    <p class="conclusion">FATE learns the tokens of correspondence for dense optical flow. Shared pixel-to-token
-      assignments pool matching features and distribute token flow to pixels, and flow supervision learns the
-      assignments and matching features jointly. Motion is estimated on coarser tokens, while image evidence stays
-      dense. <b>Adaptive tokens improve both the use of local context and the preservation of pixel motion.</b></p>
+    <p class="conclusion">FATE matches at the scale where evidence is reliable, then reconstructs pixel flow with the
+      same grouping. Supports spread where motion is shared and sharpen where it is not. The largest gains are where a
+      pixel has no match of its own, with further gains near motion boundaries, at a quarter of WAFT's matching
+      locations. <b>Learned associations are what make the coarse matches and the precise flow the same decision.</b></p>
   </div>
 </section>
 
