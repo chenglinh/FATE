@@ -20,7 +20,7 @@
   <link rel="icon" href="static/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="static/fonts/eb-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="static/vendor/katex/katex.min.css">
-  <link rel="stylesheet" href="static/css/style.css">
+  <link rel="stylesheet" href="static/css/style.css?v=15">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -59,29 +59,6 @@
       <a class="btn" href="#citation">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h4v4c0 3-2 5-4 6M15 7h4v4c0 3-2 5-4 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>BibTeX</a>
     </div>
-
-    <figure class="teaser">
-      <div class="teaser-bar">
-        <div class="pills" role="group" aria-label="Teaser example">
-          <button class="pill" aria-pressed="true" data-teaser="sintel">Sintel</button>
-          <button class="pill" aria-pressed="false" data-teaser="blade">Blade</button>
-        </div>
-        <div class="pills small" role="group" aria-label="Left layer">
-          <span class="pill-label">Left:</span>
-          <button class="pill" aria-pressed="true" data-teaser-left="units">Learned tokens</button>
-          <button class="pill" aria-pressed="false" data-teaser-left="image">Input image</button>
-        </div>
-      </div>
-      <div class="compare" id="teaser-compare">
-        <img class="layer base" alt="Predicted dense flow" draggable="false">
-        <div class="clip"><img class="layer top" alt="Learned tokens" draggable="false"></div>
-        <div class="divider" role="slider" tabindex="0" aria-label="Drag to compare" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span class="knob"><svg viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
-        <span class="tag tag-left">Learned tokens</span>
-        <span class="tag tag-right">Predicted dense flow</span>
-        <div class="lens" aria-hidden="true"></div>
-      </div>
-      <figcaption>Learned tokens and the flow they produce. Drag to compare.</figcaption>
-    </figure>
   </div>
 </header>
 
@@ -92,10 +69,8 @@
 </section>
 
 <section class="wrap narrow abstract" aria-labelledby="abstract-h">
-  <details class="card fold-card">
-  <summary><h2 id="abstract-h">Abstract</h2></summary>
+  <h2 id="abstract-h">Abstract</h2>
   <p>Optical flow requires reliable matching from sufficient visual context while estimating precise motion at every pixel. State-of-the-art methods such as WAFT match on fixed grids and then upsample flow, without explicitly linking how visual evidence is gathered for matching to how motion is distributed to each pixel. Our key insight is that pixels likely to move together can share visual evidence for matching and draw on the same motion estimates; this consistent visual grounding lets correspondence operate at a coarser scale than the flow. We realize this in <em>Flow from Adaptive Token Estimation</em> (FATE), which learns adaptive correspondence tokens whose supports spread within coherent regions to gather context and sharpen at motion boundaries to keep flow precise. Shared soft pixel-to-token associations pool features for matching and combine coarse token motions into precise pixel flow. Flow supervision jointly trains grouping, matching, and flow estimation without segmentation labels, enabling the model to anticipate which pixels are likely to move together from appearance alone in unseen images. Trained on FlyingChairs and FlyingThings3D, FATE achieves state-of-the-art zero-shot accuracy on Sintel Final and KITTI, a critical setting given scarce real-world flow labels. For visible pixels, FATE improves accuracy within coherent regions, and more so near motion boundaries. Its largest gains occur where direct matches are unavailable: occluded or out-of-frame pixels account for roughly 10% of valid pixels but 50% of WAFT's total error. Experiments show that learning adaptive correspondence through pixel-to-token grouping enables both reliable matching and precise pixel-level flow, and improves generalization to unseen real scenes.</p>
-  </details>
 </section>
 
 <!-- ============================================================ LEARNED UNITS -->
@@ -328,6 +303,10 @@
           <div class="ex-title" id="ex-title"></div>
           <div class="ex-meta" id="ex-meta"></div>
         </div>
+        <div class="pills small" id="gallery-views" role="group" aria-label="Large view" hidden>
+          <button class="pill" type="button" aria-pressed="true" data-gallery-view="flow">Flow</button>
+          <button class="pill" type="button" aria-pressed="false" data-gallery-view="tokens">Token map</button>
+        </div>
       </div>
       <p class="ex-caption" id="ex-caption"></p>
       <div class="minis">
@@ -345,7 +324,7 @@
         <div class="lens" aria-hidden="true"></div>
         <span class="mark"></span>
       </div>
-      <p class="gallery-hint">Drag to compare WAFT and FATE.</p>
+      <p class="gallery-hint" id="gallery-hint">Drag to compare WAFT and FATE.</p>
       <details class="reading" id="flow-colors">
         <summary>How to read these images</summary>
         <div class="reading-body">
@@ -353,7 +332,8 @@
           <p><b>Hue</b> gives the direction of motion and <b>color intensity</b> its speed; white means no motion.
             Ground truth and both predictions share one color scale per example. In the visibility map, <b>blue</b>
             marks pixels whose target is occluded or out of frame, gray the other valid pixels, and black excluded
-            pixels. Black in the ground truth marks missing labels; KITTI's sparse labels are enlarged for display.</p>
+            pixels. Black in the ground truth marks missing labels; KITTI's sparse labels are enlarged for display.
+            On the token map, white lines separate pixels assigned to different tokens.</p>
         </div>
       </details>
     </div>
@@ -471,6 +451,6 @@
 <script defer src="static/vendor/katex/contrib/auto-render.min.js"></script>
 <script src="static/js/data.js"></script>
 <script src="static/js/charts.js"></script>
-<script src="static/js/main.js"></script>
+<script src="static/js/main.js?v=15"></script>
 </body>
 </html>

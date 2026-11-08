@@ -122,38 +122,6 @@
     };
   }
 
-  /* -------------------------------------------------------------- teaser */
-  (function teaser() {
-    const root = $("#teaser-compare");
-    if (!root) return;
-    const cmp = Compare(root);
-    const T = {
-      sintel: { w: 1024, h: 436, name: "Sintel" },
-      blade: { w: 1024, h: 436, name: "Blade" },
-    };
-    let scene = "sintel", left = "units";
-    const draw = () => {
-      const t = T[scene];
-      cmp.set({
-        left: left === "units" ? { src: `${IMG}teaser/${scene}_units.webp`, label: "Learned tokens" } : { src: `${IMG}teaser/${scene}_image.webp`, label: "Input image" },
-        right: { src: `${IMG}teaser/${scene}_flow.webp`, label: "Predicted dense flow" },
-        w: t.w, h: t.h,
-      });
-    };
-    $$("[data-teaser]").forEach((b) => b.addEventListener("click", () => {
-      scene = b.dataset.teaser;
-      $$("[data-teaser]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
-      draw();
-    }));
-    $$("[data-teaser-left]").forEach((b) => b.addEventListener("click", () => {
-      left = b.dataset.teaserLeft;
-      $$("[data-teaser-left]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
-      draw();
-    }));
-    draw();
-    ["blade_units", "blade_flow", "blade_image", "sintel_image"].forEach((n) => { const i = new Image(); i.src = `${IMG}teaser/${n}.webp`; });
-  })();
-
   /* ---------------------------------------------------------- count-up */
   (function countUp() {
     const nums = $$("[data-count]");
@@ -395,19 +363,20 @@
         caption: "Much of the cape is hidden in Image\u00a02, so it has no visible match. FATE recovers its motion; WAFT gives it the wrong motion." },
       { id: "sintel-ambush5", ds: "Sintel Final", name: "ambush 5", title: "Blurred hair", w: 1024, h: 436, at: 22,
         caption: "The Final rendering blurs the moving hair. FATE recovers its motion; WAFT gives it the wrong direction." },
-      { id: "kitti-45", ds: "KITTI", name: "000045", title: "A vehicle leaving the image", w: 1242, h: 375, at: 86,
+      { id: "kitti-45", ds: "KITTI", name: "000045", title: "A vehicle leaving the image", w: 1242, h: 375, at: 86, tokens: true,
         caption: "Part of the vehicle has left the image in Image\u00a02. FATE better separates its motion from the surrounding road." },
       { id: "kitti-182", ds: "KITTI", name: "000182", title: "An approaching vehicle", w: 1241, h: 376, at: 22,
         caption: "FATE better separates the approaching vehicle\u2019s motion from the road; WAFT spreads it into the road at the bottom left." },
-      { id: "sintel-cave2", ds: "Sintel Clean", name: "cave 2", title: "A wing behind crossing limbs", w: 1024, h: 436,
+      { id: "sintel-cave2", ds: "Sintel Clean", name: "cave 2", title: "A wing behind crossing limbs", w: 1024, h: 436, tokens: true,
         caption: "WAFT assigns incorrect motion to the wing behind the crossing limbs; FATE recovers the wing\u2019s motion." },
-      { id: "sintel-ambush4", ds: "Sintel Clean", name: "ambush 4", title: "A broad sleeve", w: 1024, h: 436,
+      { id: "sintel-ambush4", ds: "Sintel Clean", name: "ambush 4", title: "A broad sleeve", w: 1024, h: 436, tokens: true,
         caption: "The sleeve moves differently across its extent. FATE recovers this spatially varying motion; WAFT gives much of it the wrong motion." },
     ];
     const minis = $$(".mini", root), thumbs = $(".thumbs", root);
     const cmpRoot = $("#gallery-compare"), cmp = Compare(cmpRoot);
+    const viewToggle = $("#gallery-views");
     const src = (ex, layer) => `${IMG}examples/${ex.id}/${layer}.webp`;
-    let cur = EX[0];
+    let cur = EX[0], view = "flow";
 
     EX.forEach((ex) => {
       const b = document.createElement("button");
@@ -415,7 +384,12 @@
       b.innerHTML = `<img src="${src(ex, "thumb")}" alt="" width="360" height="${Math.round((360 * ex.h) / ex.w)}"><span><b>${ex.ds}</b>${ex.title}</span>`;
       b.addEventListener("click", () => { cur = ex; render(); });
       thumbs.appendChild(b);
+      if (ex.tokens) { const i = new Image(); i.src = src(ex, "tokens"); }
     });
+    $$("[data-gallery-view]", viewToggle).forEach((b) => b.addEventListener("click", () => {
+      view = b.dataset.galleryView;
+      render();
+    }));
 
     /* Hovering any view marks the same image position in all of them. */
     const views = minis.map((m) => $(".mini-img", m)).concat([cmpRoot]);
@@ -439,14 +413,22 @@
       $("#ex-title").textContent = cur.title;
       $("#ex-meta").textContent = `${cur.ds} \u00b7 ${cur.name}`;
       $("#ex-caption").textContent = cur.caption;
+      if (!cur.tokens && view === "tokens") view = "flow";
+      viewToggle.hidden = !cur.tokens;
+      $$("[data-gallery-view]", viewToggle).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.galleryView === view)));
       minis.forEach((m) => {
         const img = $("img", m);
         img.width = cur.w; img.height = cur.h;
         img.src = src(cur, m.dataset.layer);
       });
+      const tokens = view === "tokens";
+      cmpRoot.classList.toggle("tokens", tokens);
+      const hint = tokens ? "Drag to compare the image and the token map." : "Drag to compare WAFT and FATE.";
+      $("#gallery-hint").textContent = hint;
+      $(".divider", cmpRoot).setAttribute("aria-label", hint.replace(/\.$/, ""));
       cmp.set({
-        left: { src: src(cur, "waft"), label: "WAFT" },
-        right: { src: src(cur, "fate"), label: "FATE (ours)" },
+        left: tokens ? { src: src(cur, "image1"), label: "Image 1" } : { src: src(cur, "waft"), label: "WAFT" },
+        right: tokens ? { src: src(cur, "tokens"), label: "Token map" } : { src: src(cur, "fate"), label: "FATE (ours)" },
         w: cur.w, h: cur.h, at: cur.at ?? 50,
       });
     }

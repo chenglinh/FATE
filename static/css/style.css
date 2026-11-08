@@ -141,7 +141,7 @@ b, strong { font-weight: 650; }
 .authors .sep { color: var(--muted); margin: 0 10px; }
 .affil { color: var(--muted); margin: 4px 0 22px; }
 
-.buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 34px; }
+.buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 8px; }
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--ink); color: #fff; font-size: 15px; font-weight: 600;
@@ -153,16 +153,9 @@ b, strong { font-weight: 650; }
 .btn.disabled:hover { transform: none; }
 .btn small { font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; opacity: .9; }
 
-/* ------------------------------------------------------------- teaser */
-.teaser { margin: 0 auto; max-width: 1100px; }
-.teaser-bar {
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
-  gap: 10px; margin-bottom: 10px;
-}
-.teaser figcaption, .fig figcaption {
+.fig figcaption {
   color: var(--ink-2); font-size: 15px; line-height: 1.6; text-align: left; margin-top: 12px;
 }
-.teaser figcaption { max-width: 900px; margin: 14px auto 0; text-align: center; }
 
 /* -------------------------------------------------------------- pills */
 .pills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -217,7 +210,7 @@ b, strong { font-weight: 650; }
 }
 .compare.lens-on .lens { opacity: 1; }
 /* --------------------------------------------------------------- tldr */
-.tldr { padding: 40px 24px 10px; }
+.tldr { padding: 28px 24px 4px; }
 .tldr-text {
   max-width: 880px; margin: 0 auto 28px; font-size: 1.12rem; line-height: 1.7; text-align: center;
 }
@@ -259,10 +252,12 @@ h3.sub { margin: 34px 0 10px; font-size: 1.16rem; }
 .lead { font-size: 1.07rem; color: var(--ink-2); margin: 0; }
 p { margin: 0 0 14px; }
 
-.abstract { padding-top: 30px; padding-bottom: 0; }
-.abstract .fold-card { margin: 0; }
-.abstract h2 { margin: 0; font-family: var(--sans); font-size: 16px; font-weight: 650; letter-spacing: 0; line-height: 1.4; }
-.abstract p { text-align: justify; hyphens: auto; -webkit-hyphens: auto; margin: 12px 0 2px; }
+.abstract { padding-top: 6px; padding-bottom: 8px; }
+.abstract h2 {
+  margin: 0 0 10px; font-family: var(--sans); font-size: 12.5px; font-weight: 750;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--dace); line-height: 1.4;
+}
+.abstract p { text-align: justify; hyphens: auto; -webkit-hyphens: auto; margin: 0; }
 
 .fold-card > summary {
   list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -522,8 +517,10 @@ table.num .src { font-size: 12px; color: var(--muted); }
 .mini-img img { width: 100%; height: auto; display: block; user-select: none; -webkit-user-select: none; }
 .mini figcaption { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-top: 5px; }
 .sw-occ { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: #56B4E9; margin-right: 6px; vertical-align: -1px; }
+#gallery-views[hidden] { display: none; }
 #gallery-compare { cursor: ew-resize; }
 #gallery-compare .tag-right { background: var(--dace); }
+#gallery-compare.tokens .tag-right { background: rgba(14, 26, 36, .62); }
 .gallery .mark {
   position: absolute; left: var(--fx, 50%); top: var(--fy, 50%); z-index: 3; width: 14px; height: 14px;
   border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1.5px rgba(14, 26, 36, .8);
