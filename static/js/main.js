@@ -64,8 +64,8 @@
     }));
     $$("[data-story-frame]").forEach((button) => button.addEventListener("click", () => {
       const frame = button.dataset.storyFrame;
-      $("#story-input").src = `${IMG}examples/sintel-ambush4/image${frame}.webp`;
-      $("#story-input").alt = `Image ${frame} of the same Sintel sleeve scene`;
+      $("#story-input").src = `${IMG}examples/${story.dataset.example}/image${frame}.webp`;
+      $("#story-input").alt = `Image ${frame} of the same KITTI street scene`;
       $$("[data-story-frame]").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
     }));
   }
@@ -374,17 +374,17 @@
     const root = $("#gallery");
     if (!root) return;
     const EX = [
-      { id: "sintel-ambush2", ds: "Sintel Clean", name: "ambush 2", title: "An occluded cape", w: 1024, h: 436,
+      { id: "sintel-ambush2", ds: "Sintel", name: "ambush 2", title: "An occluded cape", w: 1024, h: 436,
         caption: "Much of the cape is hidden in Image\u00a02, so it has no visible match. FATE recovers its motion; WAFT gives it the wrong motion." },
-      { id: "sintel-ambush5", ds: "Sintel Final", name: "ambush 5", title: "Blurred hair", w: 1024, h: 436, at: 22,
-        caption: "The Final rendering blurs the moving hair. FATE recovers its motion; WAFT gives it the wrong direction." },
+      { id: "sintel-ambush5", ds: "Sintel", name: "ambush 5", title: "Blurred hair", w: 1024, h: 436, at: 22,
+        caption: "Motion blur obscures the moving hair. FATE recovers its motion; WAFT gives it the wrong direction." },
       { id: "kitti-45", ds: "KITTI", name: "000045", title: "A vehicle leaving the image", w: 1242, h: 375, at: 86, tokens: true,
         caption: "Part of the vehicle has left the image in Image\u00a02. FATE better separates its motion from the surrounding road." },
       { id: "kitti-182", ds: "KITTI", name: "000182", title: "An approaching vehicle", w: 1241, h: 376, at: 22,
         caption: "FATE better separates the approaching vehicle\u2019s motion from the road; WAFT spreads it into the road at the bottom left." },
-      { id: "sintel-cave2", ds: "Sintel Clean", name: "cave 2", title: "A wing behind crossing limbs", w: 1024, h: 436, tokens: true,
+      { id: "sintel-cave2", ds: "Sintel", name: "cave 2", title: "A wing behind crossing limbs", w: 1024, h: 436, tokens: true,
         caption: "WAFT assigns incorrect motion to the wing behind the crossing limbs; FATE recovers the wing\u2019s motion." },
-      { id: "sintel-ambush4", ds: "Sintel Clean", name: "ambush 4", title: "A broad sleeve", w: 1024, h: 436, tokens: true,
+      { id: "sintel-ambush4", ds: "Sintel", name: "ambush 4", title: "A broad sleeve", w: 1024, h: 436, tokens: true,
         caption: "The sleeve moves differently across its extent. FATE recovers this spatially varying motion; WAFT gives much of it the wrong motion." },
     ];
     const minis = $$(".mini", root), thumbs = $(".thumbs", root);
