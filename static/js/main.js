@@ -166,7 +166,7 @@
         boxes: ["dense", "aPanel", "pool", "attn", "feat"] },
       { n: 4, name: "Matching and refinement", text: "WAFT's iterative matching and refinement estimates token flow \\(F_q\\) from the two images' token features. Each image's assignments are predicted once and reused across the \\(T\\) updates.",
         boxes: ["feat", "refine", "unitFlow"] },
-      { n: 5, name: "Adaptive broadcasting", text: "The same assignments return each token's flow to its pixels: \\(F_x = P_x F_q\\).",
+      { n: 5, name: "Adaptive broadcasting", text: "Each pixel blends nearby token motions using its learned assignment weights: \\(F_x = P_x F_q\\).",
         boxes: ["unitFlow", "aPanel", "broadcast", "flow"] },
       { n: "", name: "Supervision", text: "The dashed link marks ground-truth flow supervision of both token predictions and assignments. The figure below shows where each objective acts.",
         boxes: ["gt", "supervision", "flow"] },

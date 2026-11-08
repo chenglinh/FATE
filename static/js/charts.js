@@ -214,10 +214,10 @@
     { key: "boundary", title: "Near motion boundaries" },
   ];
   function regions() {
-    const R = D.regions, CC = D.concentration;
+    const rows = D.regionalResults;
     register(document.getElementById("chart-concentration"), (el, W) => {
       const rowH = 40, m = { t: 52, r: 16, b: 28, l: 92 };
-      const H = m.t + DS5.length * rowH + m.b;
+      const H = m.t + rows.length * rowH + m.b;
       const s = svgIn(el, W, H);
       const x = d3.scaleLinear().domain([0, 60]).range([m.l, W - m.r]);
       text(s, 0, 14, W >= 480 ? "A small share of pixels causes roughly half of the error" : "Few pixels, roughly half of the error", "panel-title");
@@ -229,25 +229,19 @@
       gridX(s, x, m.t - 4, H - m.b, [0, 10, 20, 30, 40, 50, 60]);
       s.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`)
         .call(d3.axisBottom(x).tickValues([0, 10, 20, 30, 40, 50, 60]).tickFormat((d) => d + "%").tickSizeOuter(0));
-      DS5.forEach((ds, i) => {
-        const c = CC[ds.key], y0 = m.t + i * rowH;
-        text(s, m.l - 10, y0 + rowH / 2 + 2, ds.label, "label", "end");
+      rows.forEach((c, i) => {
+        const y0 = m.t + i * rowH;
+        text(s, m.l - 10, y0 + rowH / 2 + 2, c.label, "label", "end");
         [[c.pixels, C.occ, 6], [c.error, C.waft, 19]].forEach(([v, col, dy]) => {
           s.append("rect").attr("x", m.l).attr("y", y0 + dy).attr("width", x(v) - m.l).attr("height", 11).attr("rx", 2).attr("fill", col);
           text(s, x(v) + 5, y0 + dy + 10, v.toFixed(1) + "%", "value");
         });
         s.append("rect").attr("class", "hit").attr("x", 0).attr("y", y0).attr("width", W).attr("height", rowH)
-          .call(bindTip, () => `<b>${ds.label}</b>${ttRow("Target occluded or out of frame", c.pixels.toFixed(1) + "% of pixels")}${ttRow("Their share of WAFT\u2019s EPE", c.error.toFixed(1) + "%")}`);
+          .call(bindTip, () => `<b>${c.label}</b>${ttRow("Target occluded or out of frame", c.pixels.toFixed(1) + "% of pixels")}${ttRow("Their share of WAFT\u2019s EPE", c.error.toFixed(1) + "%")}`);
       });
     });
 
-    const GAIN = [
-      { label: "Things Clean", coherent: 0.53, boundary: 3.06, missing: 6.47 },
-      { label: "Things Final", coherent: 0.46, boundary: 2.83, missing: 6.07 },
-      { label: "Sintel Clean", coherent: 0.14, boundary: 0.54, missing: 1.18 },
-      { label: "Sintel Final", coherent: 0.29, boundary: 0.87, missing: 1.95 },
-      { label: "KITTI", coherent: -0.04, boundary: 0.01, missing: 2.57 },
-    ];
+    const GAIN = D.regionalResults;
     const GAIN_PARTS = [
       ["coherent", "Coherent", C.muted],
       ["boundary", "Near a motion boundary", C.h4],
@@ -420,9 +414,10 @@
   /* ------------------------------- gain from the same local attention */
   function contextGain() {
     const pick = (sys, att) => D.h4Occluded.find((r) => r.system === sys && r.attention === att);
+    const gain = (sys) => D.attentionGain.find((r) => r.system === sys);
     const series = [
-      { name: "Fixed grid, same token count", color: C.h4, cls: "value h4", off: pick("WAFT-H/4", false), on: pick("WAFT-H/4", true) },
-      { name: "FATE", color: C.dace, cls: "value dace", off: pick("FATE", false), on: pick("FATE", true) },
+      { name: "Fixed grid, same token count", color: C.h4, cls: "value h4", off: pick("WAFT-H/4", false), on: pick("WAFT-H/4", true), gain: gain("WAFT-H/4") },
+      { name: "FATE", color: C.dace, cls: "value dace", off: pick("FATE", false), on: pick("FATE", true), gain: gain("FATE") },
     ];
     const valsOf = (k) => series.flatMap((se) => [se.off[k], se.on[k]]);
     const span = d3.max(DS5, (ds) => d3.max(valsOf(ds.key)) - d3.min(valsOf(ds.key))) * 1.2;
@@ -446,7 +441,7 @@
           ends[0] = m + sg * 7; ends[1] = m - sg * 7;
         }
         series.forEach((se, j) => {
-          const y0 = y(se.off[k]), y1 = y(se.on[k]), change = se.on[k] - se.off[k];
+          const y0 = y(se.off[k]), y1 = y(se.on[k]), change = -se.gain[k];
           g.append("line").attr("x1", xa).attr("x2", xb).attr("y1", y0).attr("y2", y1).attr("stroke", se.color).attr("stroke-width", 2.2);
           g.append("circle").attr("cx", xa).attr("cy", y0).attr("r", 3.6).attr("fill", "#fff").attr("stroke", se.color).attr("stroke-width", 1.8);
           g.append("circle").attr("cx", xb).attr("cy", y1).attr("r", 4.2).attr("fill", se.color);
@@ -480,16 +475,10 @@
       return tableHTML(head, body) + '<p class="src">Lower is better.</p>';
     },
     regions: () => {
-      const rows = [
-        ["Things Clean", 6.4, 42.5, 0.53, 3.06, 6.47],
-        ["Things Final", 6.4, 41.9, 0.46, 2.83, 6.07],
-        ["Sintel Clean", 8.4, 52.7, 0.14, 0.54, 1.18],
-        ["Sintel Final", 8.4, 42.5, 0.29, 0.87, 1.95],
-        ["KITTI", 13.9, 52.3, -0.04, 0.01, 2.57],
-      ];
+      const rows = D.regionalResults;
       const head = "<tr><th>Dataset</th><th>No direct match, % of pixels</th><th>Their share of WAFT's error</th><th>Gain, coherent</th><th>Gain, near boundary</th><th>Gain, no direct match</th></tr>";
       const g = (v) => (v > 0 ? "+" : "") + fmt(v);
-      const body = rows.map((r) => `<tr><td>${r[0]}</td><td>${r[1].toFixed(1)}</td><td>${r[2].toFixed(1)}%</td><td>${g(r[3])}</td><td>${g(r[4])}</td><td><b>${g(r[5])}</b></td></tr>`).join("");
+      const body = rows.map((r) => `<tr><td>${r.label}</td><td>${r.pixels.toFixed(1)}</td><td>${r.error.toFixed(1)}%</td><td>${g(r.coherent)}</td><td>${g(r.boundary)}</td><td><b>${g(r.missing)}</b></td></tr>`).join("");
       return tableHTML(head, body) + '<p class="src">Gain is WAFT\'s endpoint error minus FATE\'s, in pixels. A negative gain means FATE is higher. On Things, pixels with no direct match are out of frame only.</p>';
     },
     updates: () => {
