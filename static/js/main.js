@@ -129,7 +129,7 @@
     const cmp = Compare(root);
     const T = {
       sintel: { w: 1024, h: 436, name: "Sintel" },
-      spring: { w: 1600, h: 900, name: "Spring" },
+      blade: { w: 1024, h: 436, name: "Blade" },
     };
     let scene = "sintel", left = "units";
     const draw = () => {
@@ -151,7 +151,7 @@
       draw();
     }));
     draw();
-    ["spring_units", "spring_flow", "sintel_image"].forEach((n) => { const i = new Image(); i.src = `${IMG}teaser/${n}.webp`; });
+    ["blade_units", "blade_flow", "blade_image", "sintel_image"].forEach((n) => { const i = new Image(); i.src = `${IMG}teaser/${n}.webp`; });
   })();
 
   /* ---------------------------------------------------------- count-up */
