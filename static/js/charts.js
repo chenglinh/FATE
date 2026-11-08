@@ -241,32 +241,44 @@
       });
     });
 
+    const GAIN = [
+      { label: "Things Clean", coherent: 0.53, boundary: 3.06, missing: 6.47 },
+      { label: "Things Final", coherent: 0.46, boundary: 2.83, missing: 6.07 },
+      { label: "Sintel Clean", coherent: 0.14, boundary: 0.54, missing: 1.18 },
+      { label: "Sintel Final", coherent: 0.29, boundary: 0.87, missing: 1.95 },
+      { label: "KITTI", coherent: -0.04, boundary: 0.01, missing: 2.57 },
+    ];
+    const GAIN_PARTS = [
+      ["coherent", "Coherent", C.muted],
+      ["boundary", "Near a motion boundary", C.h4],
+      ["missing", "Occluded or out of frame", C.dace],
+    ];
     register(document.getElementById("chart-regions"), (el, W) => {
-      const cols = W >= 760 ? 3 : 1, gap = 30, vgap = 22;
-      const pw = (W - gap * (cols - 1)) / cols;
-      const rowH = 36, top = 46, ph = top + DS5.length * rowH + 4;
-      const H = cols === 3 ? ph : REGIONS.length * ph + (REGIONS.length - 1) * vgap;
+      const rowH = 64, m = { t: 64, r: 58, b: 26, l: W < 520 ? 92 : 118 };
+      const H = m.t + GAIN.length * rowH + m.b;
       const s = svgIn(el, W, H);
-      REGIONS.forEach((rg, i) => {
-        const g = s.append("g").attr("transform", cols === 3 ? `translate(${i * (pw + gap)},0)` : `translate(0,${i * (ph + vgap)})`);
-        const lw = 68, rw = 46;
-        const vmax = d3.max(DS5, (ds) => Math.max(R[ds.key][rg.key].WAFT, R[ds.key][rg.key].FATE));
-        const x = d3.scaleLinear().domain([0, vmax]).range([lw, pw - rw - 36]);
-        text(g, 0, 14, rg.title, "panel-title");
-        text(g, 0, 31, "EPE in pixels", "label muted");
-        text(g, pw, 31, "change", "label muted", "end");
-        DS5.forEach((ds, j) => {
-          const v = R[ds.key][rg.key], y0 = top + j * rowH;
-          text(g, lw - 8, y0 + 16, ds.short, "label", "end");
-          [["WAFT", C.waft, 0], ["FATE", C.dace, 1]].forEach(([nm, col, t]) => {
-            const yy = y0 + 4 + t * 12;
-            g.append("rect").attr("x", lw).attr("y", yy).attr("width", x(v[nm]) - lw).attr("height", 10).attr("rx", 2).attr("fill", col);
-            text(g, x(v[nm]) + 4, yy + 9, fmt(v[nm]), nm === "FATE" ? "value dace small" : "value small");
-          });
-          const ch = v.FATE - v.WAFT;
-          text(g, pw, y0 + 16, diffTxt(ch), ch < 0 ? "value good" : "value bad", "end");
-          g.append("rect").attr("class", "hit").attr("x", 0).attr("y", y0).attr("width", pw).attr("height", rowH)
-            .call(bindTip, () => `<b>${ds.label}: ${rg.title.toLowerCase()}</b>${ttRow("WAFT", fmt(v.WAFT))}${ttRow("FATE", fmt(v.FATE))}${ttRow("Change", diffTxt(ch) + " px")}`);
+      const vals = GAIN.flatMap((d) => GAIN_PARTS.map(([k]) => d[k]));
+      const x = d3.scaleLinear().domain([Math.min(0, d3.min(vals)), d3.max(vals)]).nice().range([m.l, W - m.r]);
+      text(s, 0, 14, "Gain over WAFT, in pixels of endpoint error", "panel-title");
+      const lg = s.append("g").attr("transform", "translate(0,30)");
+      GAIN_PARTS.forEach(([, name, col], i) => {
+        const x0 = (W < 640 ? i % 2 : i) * (W < 640 ? W / 2 : 230);
+        const y0 = W < 640 && i === 2 ? 16 : 0;
+        lg.append("rect").attr("x", x0).attr("y", y0).attr("width", 10).attr("height", 10).attr("rx", 2).attr("fill", col);
+        text(lg, x0 + 15, y0 + 9, name, "label");
+      });
+      const zero = x(0);
+      s.append("line").attr("x1", zero).attr("x2", zero).attr("y1", m.t - 8).attr("y2", H - m.b).attr("stroke", C.line2);
+      GAIN.forEach((d, i) => {
+        const y0 = m.t + i * rowH;
+        text(s, m.l - 10, y0 + 30, d.label, "label", "end");
+        GAIN_PARTS.forEach(([k, name, col], t) => {
+          const v = d[k], y = y0 + 4 + t * 18, x1 = x(v);
+          s.append("rect").attr("x", Math.min(zero, x1)).attr("y", y).attr("width", Math.max(1, Math.abs(x1 - zero))).attr("height", 13).attr("rx", 2).attr("fill", col);
+          const label = (v > 0 ? "+" : "") + fmt(v);
+          text(s, (v >= 0 ? x1 : zero) + 5, y + 11, label, v < 0 ? "value bad" : "value");
+          s.append("rect").attr("class", "hit").attr("x", m.l).attr("y", y - 2).attr("width", W - m.l).attr("height", 17)
+            .call(bindTip, () => `<b>${d.label}: ${name.toLowerCase()}</b>${ttRow("Gain", label + " px")}${ttRow("Reading", v < 0 ? "FATE is higher" : "FATE is lower")}`);
         });
       });
     });
@@ -468,14 +480,17 @@
       return tableHTML(head, body) + '<p class="src">Lower is better.</p>';
     },
     regions: () => {
-      const head = "<tr><th>Dataset</th><th>Occluded or out-of-frame pixels (%)</th><th>Their share of WAFT\u2019s EPE (%)</th>" +
-        REGIONS.map((rg) => `<th>${rg.title}<br><small>WAFT / FATE</small></th>`).join("") + "</tr>";
-      const body = DS5.map((ds) => {
-        const r = D.regions[ds.key], c = D.concentration[ds.key];
-        return `<tr><td>${ds.label}</td><td>${c.pixels.toFixed(1)}</td><td>${c.error.toFixed(1)}</td>` +
-          REGIONS.map((rg) => `<td>${fmt(r[rg.key].WAFT)} / <b>${fmt(r[rg.key].FATE)}</b></td>`).join("") + "</tr>";
-      }).join("");
-      return tableHTML(head, body) + '<p class="src">Pooled EPE over valid pixels in each region. On Things, the missing-target region includes only out-of-frame pixels.</p>';
+      const rows = [
+        ["Things Clean", 6.4, 42.5, 0.53, 3.06, 6.47],
+        ["Things Final", 6.4, 41.9, 0.46, 2.83, 6.07],
+        ["Sintel Clean", 8.4, 52.7, 0.14, 0.54, 1.18],
+        ["Sintel Final", 8.4, 42.5, 0.29, 0.87, 1.95],
+        ["KITTI", 13.9, 52.3, -0.04, 0.01, 2.57],
+      ];
+      const head = "<tr><th>Dataset</th><th>No direct match, % of pixels</th><th>Their share of WAFT's error</th><th>Gain, coherent</th><th>Gain, near boundary</th><th>Gain, no direct match</th></tr>";
+      const g = (v) => (v > 0 ? "+" : "") + fmt(v);
+      const body = rows.map((r) => `<tr><td>${r[0]}</td><td>${r[1].toFixed(1)}</td><td>${r[2].toFixed(1)}%</td><td>${g(r[3])}</td><td>${g(r[4])}</td><td><b>${g(r[5])}</b></td></tr>`).join("");
+      return tableHTML(head, body) + '<p class="src">Gain is WAFT\'s endpoint error minus FATE\'s, in pixels. A negative gain means FATE is higher. On Things, pixels with no direct match are out of frame only.</p>';
     },
     updates: () => {
       const head = "<tr><th>Model</th><th>Updates</th>" + ROWS6.map(([, l]) => `<th>${l}${l === "KITTI Fl" ? " (%)" : ""}</th>`).join("") + "<th>GMACs</th></tr>";

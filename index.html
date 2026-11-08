@@ -101,30 +101,13 @@
     <div class="idea"><b>2. Use that grouping twice.</b> The same associations pool features for the match and combine token motions into each pixel's flow.</div>
     <div class="idea"><b>3. Sharpen at boundaries.</b> Supports spread inside a coherent region and tighten where motion changes, so one token does not mix two surfaces.</div>
   </div>
-  <div class="stats">
-    <div class="stat"><div class="stat-num"><span data-count="2.10" data-dec="2">2.10</span><span class="stat-sep">/</span><span data-count="3.11" data-dec="2">3.11</span></div><div class="stat-label">Sintel Final / KITTI EPE</div><div class="stat-note">lowest zero-shot error among the compared published methods</div></div>
-    <div class="stat"><div class="stat-num">6&ndash;14%</div><div class="stat-label">of pixels, about half the error</div><div class="stat-note">occluded or out-of-frame pixels are 6.4&ndash;13.9% of valid pixels and 41.9&ndash;52.7% of WAFT's error</div></div>
-    <div class="stat"><div class="stat-num">1.2&ndash;2.6<span class="stat-unit">px</span></div><div class="stat-label">lower EPE with no direct match</div><div class="stat-note">than WAFT on Sintel and KITTI; coherent pixels gain at most 0.53 px</div></div>
-    <div class="stat"><div class="stat-num">4 <span class="stat-unit">steps</span></div><div class="stat-label">beats five-step WAFT</div><div class="stat-note">lower error on every reported result, at 706 versus 732 GMACs</div></div>
-  </div>
+  <p class="sota">FATE is state of the art on zero-shot Sintel Final and KITTI.</p>
 </section>
 
 <section class="wrap narrow abstract" aria-labelledby="abstract-h">
   <details class="card fold-card">
   <summary><h2 id="abstract-h">Abstract</h2></summary>
-  <p>Optical flow requires reliable matching from sufficient visual context while estimating precise motion at every
-    pixel. Methods such as WAFT match on fixed grids and then upsample flow, without explicitly linking how visual
-    evidence is gathered for matching to how motion is distributed to each pixel.</p>
-  <p>Pixels likely to move together can share visual evidence for matching and draw on the same motion estimates. That
-    consistent grounding lets correspondence operate at a coarser scale than the flow. FATE learns adaptive
-    correspondence tokens whose supports spread within coherent regions to gather context and sharpen at motion
-    boundaries to keep flow precise. Shared soft pixel-to-token associations pool features for matching and combine
-    coarse token motions into precise pixel flow. Flow supervision trains the grouping, the matching, and the flow
-    together, with no segmentation labels, so the model predicts which pixels are likely to move together from
-    appearance alone.</p>
-  <p>Trained on FlyingChairs and FlyingThings3D, FATE achieves state-of-the-art zero-shot accuracy on Sintel Final and
-    KITTI. For visible pixels it improves accuracy within coherent regions, and more so near motion boundaries. Its
-    largest gains occur where direct matches are unavailable.</p>
+  <p>Optical flow requires reliable matching from sufficient visual context while estimating precise motion at every pixel. State-of-the-art methods such as WAFT match on fixed grids and then upsample flow, without explicitly linking how visual evidence is gathered for matching to how motion is distributed to each pixel. Our key insight is that pixels likely to move together can share visual evidence for matching and draw on the same motion estimates; this consistent visual grounding lets correspondence operate at a coarser scale than the flow. We realize this in <em>Flow from Adaptive Token Estimation</em> (FATE), which learns adaptive correspondence tokens whose supports spread within coherent regions to gather context and sharpen at motion boundaries to keep flow precise. Shared soft pixel-to-token associations pool features for matching and combine coarse token motions into precise pixel flow. Flow supervision jointly trains grouping, matching, and flow estimation without segmentation labels, enabling the model to anticipate which pixels are likely to move together from appearance alone in unseen images. Trained on FlyingChairs and FlyingThings3D, FATE achieves state-of-the-art zero-shot accuracy on Sintel Final and KITTI, a critical setting given scarce real-world flow labels. For visible pixels, FATE improves accuracy within coherent regions, and more so near motion boundaries. Its largest gains occur where direct matches are unavailable: occluded or out-of-frame pixels account for roughly 10% of valid pixels but 50% of WAFT's total error. Experiments show that learning adaptive correspondence through pixel-to-token grouping enables both reliable matching and precise pixel-level flow, and improves generalization to unseen real scenes.</p>
   </details>
 </section>
 
@@ -382,20 +365,16 @@
 
     <figure class="card fig" id="fig-regions">
       <div class="fig-head">
-        <div class="fig-title">Where the error is, and where FATE reduces it</div>
+        <div class="fig-title">FATE's gain is largest where a match is missing</div>
       </div>
       <div class="regions-stack">
         <div class="chart" id="chart-concentration"></div>
-        <div>
-          <div class="legend-inline"><span class="lg sq waft">WAFT</span><span class="lg sq dace">FATE</span></div>
-          <div class="chart" id="chart-regions"></div>
-        </div>
+        <div class="chart" id="chart-regions"></div>
       </div>
-      <figcaption>Top: pixels whose target is occluded or out of frame are 6&ndash;14% of valid pixels, yet they account
-        for 42&ndash;52% of the fine-grid baseline WAFT&rsquo;s error. Bottom: EPE pooled over each region, with
-        FATE&rsquo;s change from WAFT in pixels (0.25&ndash;0.46&nbsp;px overall on Sintel and KITTI). On Things, the
-        in-distribution split, the missing-target region holds only out-of-frame pixels. Near motion boundaries:
-        5&times;5 neighborhoods of ground-truth flow changes above 2&nbsp;pixels.</figcaption>
+      <figcaption>Top: pixels with no direct match are 6.4&ndash;13.9% of valid pixels and 41.9&ndash;52.7% of WAFT's error.
+        Bottom: gain is WAFT's endpoint error minus FATE's, in pixels. Coherent pixels gain at most 0.53.
+        Where the match is missing, the gain is 1.18&ndash;2.57 on Sintel and KITTI and about 6 on Things.
+        On KITTI's coherent pixels FATE is 0.04 higher. On Things, the missing-match region is out of frame only.</figcaption>
       <details class="numbers" data-table="regions"><summary>Show the numbers</summary></details>
     </figure>
 
