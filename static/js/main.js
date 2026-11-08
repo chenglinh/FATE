@@ -60,12 +60,15 @@
     $$("[data-story-scale]").forEach((button) => button.addEventListener("click", () => {
       const detail = button.dataset.storyScale === "detail";
       story.classList.toggle("detail", detail);
+      const groups = $("#story-groups");
+      groups.src = detail ? groups.dataset.detailSrc : groups.dataset.wholeSrc;
+      groups.classList.toggle("cropped", detail);
       $$("[data-story-scale]").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
     }));
     $$("[data-story-frame]").forEach((button) => button.addEventListener("click", () => {
       const frame = button.dataset.storyFrame;
-      $("#story-input").src = `${IMG}examples/${story.dataset.example}/image${frame}.webp`;
-      $("#story-input").alt = `Image ${frame} of the same KITTI street scene`;
+      $("#story-input").src = story.dataset[`image${frame}`];
+      $("#story-input").alt = `Image ${frame} of the Sintel moving-blade scene`;
       $$("[data-story-frame]").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
     }));
   }
