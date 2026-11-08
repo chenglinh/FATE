@@ -20,7 +20,7 @@
   <link rel="icon" href="static/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="static/fonts/eb-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="static/vendor/katex/katex.min.css">
-  <link rel="stylesheet" href="static/css/style.css?v=15">
+  <link rel="stylesheet" href="static/css/style.css?v=17">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -30,9 +30,10 @@
     <a class="brand" href="#top">FATE</a>
     <div class="navlinks">
       <a href="#tokens">Idea</a>
+      <a href="#examples">Examples</a>
+      <a href="#results">Results</a>
       <a href="#method">Method</a>
-      <a href="#results">Evidence</a>
-      <a href="#analysis">Comparisons</a>
+      <a href="#analysis">Analysis</a>
       <a href="#citation">Cite</a>
     </div>
   </div>
@@ -65,54 +66,95 @@
 <main id="main">
 
 <section class="tldr wrap">
-  <p class="tldr-text"><span class="kicker">TL;DR</span> FATE learns adaptive pixel groups for reliable matching and reuses them to reconstruct precise dense optical flow, achieving stronger zero-shot generalization.</p>
+  <p class="tldr-text">FATE learns adaptive pixel groups for reliable matching, then reuses them to reconstruct precise motion at every pixel.</p>
 </section>
 
+<section id="tokens" class="section story-section">
+  <div class="wrap">
+    <div class="story-heading">
+      <div><div class="eyebrow">One scene. From image to motion.</div><h2>Adaptive matching. Precise pixel flow.</h2></div>
+      <div class="pills small" role="group" aria-label="Opening visual scale">
+        <button class="pill" type="button" data-story-scale="whole" aria-pressed="true">Whole scene</button>
+        <button class="pill" type="button" data-story-scale="detail" aria-pressed="false">Inspect boundary</button>
+      </div>
+    </div>
+    <div class="story-grid" id="opening-story">
+      <figure class="story-stage">
+        <figcaption class="story-label"><span class="step-number">01</span><strong>Input images</strong><span class="frame-switch" role="group" aria-label="Input frame"><button type="button" data-story-frame="1" aria-pressed="true">1</button><button type="button" data-story-frame="2" aria-pressed="false">2</button></span></figcaption>
+        <div class="story-media"><img id="story-input" class="story-image" src="static/img/examples/sintel-ambush4/image1.webp" width="1024" height="436" alt="Image 1 of a Sintel scene with a broad sleeve moving across the foreground" fetchpriority="high"></div>
+        <p>Start with two images of a moving scene.</p>
+      </figure>
+      <figure class="story-stage">
+        <figcaption class="story-label"><span class="step-number">02</span><strong>Adaptive groups</strong><span class="stage-arrow" aria-hidden="true">&rarr;</span></figcaption>
+        <div class="story-media"><img class="story-image" src="static/img/examples/sintel-ambush4/tokens.webp" width="1024" height="436" alt="Learned pixel groups overlaid on Image 1; the groups follow the sleeve and surrounding surfaces"></div>
+        <p>Gather visual evidence into tokens for matching.</p>
+      </figure>
+      <figure class="story-stage">
+        <figcaption class="story-label"><span class="step-number">03</span><strong>Dense flow</strong><span class="stage-arrow" aria-hidden="true">&rarr;</span></figcaption>
+        <div class="story-media"><img class="story-image" src="static/img/examples/sintel-ambush4/fate.webp" width="1024" height="436" alt="FATE's predicted dense optical flow for the same sleeve scene"></div>
+        <p>Blend token motions into a prediction at every pixel.</p>
+      </figure>
+    </div>
+    <p class="story-note">Sintel Clean &middot; ambush 4. Groups and predicted flow refer to Image 1. White lines show learned groups; flow color encodes motion.</p>
+    <aside class="result-summary" aria-label="Main zero-shot result">
+      <div><p class="result-claim">State-of-the-art <em>zero-shot EPE</em> on Sintel Final and KITTI.</p><p class="result-scope">Among published methods compared in the paper. Trained on FlyingChairs + FlyingThings3D.</p></div>
+      <a href="#results">Explore the results <span aria-hidden="true">&rarr;</span></a>
+    </aside>
+  </div>
+</section>
 
-
-<!-- ============================================================ LEARNED UNITS -->
-<section id="tokens" class="section">
-  <div class="wrap narrow sec-head">
-    <div class="eyebrow">The idea, in the image</div>
-    <h2>Spread inside a region, sharpen at a boundary</h2>
+<section id="examples" class="section alt comparison-section">
+  <div class="wrap sec-head">
+    <div class="eyebrow">See the difference</div>
+    <h2>Precise motion where matching gets difficult</h2>
+    <p class="lead">Explore FATE and WAFT on unseen scenes. Drag the divider to compare their predictions.</p>
   </div>
   <div class="wrap">
-    <figure class="card fig" id="groups">
-      <div class="fig-head"><div class="fig-title">Learned groups and selected tokens</div></div>
-      <div class="regions" data-connectors='[{"c":"context","from":"r1-image1","box":[0.2321,0.3929,0.5179,0.6786],"fc":["ne","se"],"to":"r1-groups","tc":["nw","sw"]},{"c":"detail","from":"r1-groups","box":[0.1719,0.25,0.3281,0.5625],"fc":["ne","se"],"to":"r1-unit","tc":["nw","sw"]}]'>
-        <div class="region-row">
-          <figure class="pm" data-panel="r1-image1"><figcaption>Image 1</figcaption><img src="static/img/units/r1_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
-          <figure class="pm" data-panel="r1-groups"><figcaption>Learned groups</figcaption><img src="static/img/units/r1_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
-          <figure class="pm" data-panel="r1-unit"><figcaption>Token support</figcaption><img src="static/img/units/r1_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
-          <figure class="pm"><figcaption>GT flow (crop)</figcaption><img src="static/img/units/r1_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
-          <figure class="pm"><figcaption>GT flow (detail)</figcaption><img src="static/img/units/r1_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
+    <div class="card fig gallery" id="gallery" data-initial="sintel-ambush4">
+      <div class="fig-head"><div class="fig-title">Zero-shot examples</div><span class="fig-note">WAFT estimates flow for four times as many tokens</span></div>
+      <div class="gallery-head">
+        <div>
+          <div class="ex-title" id="ex-title"></div>
+          <div class="ex-meta" id="ex-meta"></div>
         </div>
-        <div class="region-row">
-          <figure class="pm"><img src="static/img/units/r2_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
-          <figure class="pm"><img src="static/img/units/r2_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
-          <figure class="pm"><img src="static/img/units/r2_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
-          <figure class="pm"><img src="static/img/units/r2_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
-          <figure class="pm"><img src="static/img/units/r2_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
+        <div class="pills small" id="gallery-views" role="group" aria-label="Large view" hidden>
+          <button class="pill" type="button" aria-pressed="true" data-gallery-view="flow">Flow</button>
+          <button class="pill" type="button" aria-pressed="false" data-gallery-view="tokens">Token map</button>
         </div>
       </div>
-      <figcaption>Learned tokens follow the surface, not the grid.</figcaption>
-    </figure>
-  </div>
-</section>
-
-<section class="wrap narrow abstract" aria-labelledby="abstract-h">
-  <h2 id="abstract-h">Abstract</h2>
-  <p>Optical flow requires reliable matching from sufficient visual context and precise motion at every pixel. Existing methods such as WAFT match and estimate flow on the same coarse grids, then recover dense flow through learned upsampling, without explicitly linking visual support for matching to dense flow reconstruction. Our key insight is that dense pixel-level flow does not require equally dense matching. We decouple correspondence scale from flow resolution by adapting the size and shape of spatial supports to image structure for reliable matching, while reusing these supports for precise dense flow reconstruction. We realize this in Flow from Adaptive Token Estimation (FATE), whose token supports expand within coherent regions and contract near motion boundaries. Shared pixel-to-token associations pool features for matching and reconstruct pixel flow from token motions. Flow supervision jointly trains pixel grouping, token matching, and flow estimation without grouping labels, allowing FATE to anticipate which pixels are likely to move together from appearance alone. Trained on FlyingChairs/FlyingThings3D, FATE achieves the highest <em>zero-shot</em> accuracy on Sintel Final and KITTI, a critical setting given scarce real-world flow labels. For visible pixels, FATE improves accuracy within coherent regions, and more near motion boundaries. Its largest gains occur where direct matches are unavailable: Occluded or out-of-frame pixels account for roughly 10% of valid pixels but 50% of WAFT's total error. Experiments show that adaptive correspondence through pixel-to-token grouping enables reliable matching and precise pixel-level flow, improving generalization to unseen real scenes.</p>
-</section>
-
-<!-- ============================================================ PROBLEM -->
-<section id="problem" class="section alt">
-  <div class="wrap narrow sec-head">
-    <div class="eyebrow">What changes</div>
-    <h2>The gains show up where a pixel cannot be matched alone</h2>
-  </div>
-
-  <div class="wrap">
+      <p class="ex-caption" id="ex-caption"></p>
+      <div class="compare" id="gallery-compare">
+        <img class="layer base" alt="FATE flow" draggable="false">
+        <div class="clip"><img class="layer top" alt="WAFT flow" draggable="false"></div>
+        <div class="divider" role="slider" tabindex="0" aria-label="Drag to compare WAFT and FATE" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span class="knob"><svg viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+        <span class="tag tag-left">WAFT</span>
+        <span class="tag tag-right">FATE (ours)</span>
+        <div class="lens" aria-hidden="true"></div>
+        <span class="mark"></span>
+      </div>
+      <p class="gallery-hint" id="gallery-hint">Drag to compare WAFT and FATE.</p>
+      <div class="minis">
+        <figure class="mini" data-layer="image1"><div class="mini-img"><img alt="Image 1" draggable="false"><span class="mark"></span></div><figcaption>Image 1</figcaption></figure>
+        <figure class="mini" data-layer="image2"><div class="mini-img"><img alt="Image 2" draggable="false"><span class="mark"></span></div><figcaption>Image 2</figcaption></figure>
+        <figure class="mini" data-layer="gt"><div class="mini-img"><img alt="Ground-truth flow" draggable="false"><span class="mark"></span></div><figcaption>Ground truth</figcaption></figure>
+        <figure class="mini" data-layer="occ"><div class="mini-img"><img alt="Target visibility" draggable="false"><span class="mark"></span></div><figcaption><span class="sw-occ"></span>Target occluded or out of frame</figcaption></figure>
+      </div>
+      <div class="thumbs" role="group" aria-label="Examples"></div>
+      <details class="reading" id="flow-colors">
+        <summary>How to read these images</summary>
+        <div class="reading-body">
+          <canvas id="colorwheel" width="132" height="132" aria-label="Optical flow color wheel"></canvas>
+          <p><b>Hue</b> gives the direction of motion and <b>color intensity</b> its speed; white means no motion.
+            Ground truth and both predictions share one color scale per example. In the visibility map, <b>blue</b>
+            marks pixels whose target is occluded or out of frame, gray the other valid pixels, and black excluded
+            pixels. Black in the ground truth marks missing labels; KITTI's sparse labels are enlarged for display.
+            On the token map, white lines separate pixels assigned to different tokens.</p>
+        </div>
+      </details>
+    </div>
+    <details class="card fold-card supporting-examples">
+      <summary><span class="fig-title">More examples: fine structures, occlusion, and changing light</span></summary>
+      <div class="fold-body">
     <figure class="card fig" id="premise">
       <div class="premise">
         <div class="premise-col" data-connectors='[{"c":"context","from":"a-full","box":[0.7266,0.2798,0.8672,0.5275],"fc":["sw","se"],"to":"a-image1","tc":["nw","ne"],"knock":"a-image1"},{"c":"detail","from":"a-image1","box":[0.3889,0.3519,0.6111,0.6481],"fc":["sw","se"],"to":"a-detail","tc":["nw","ne"],"knock":"a-detail"}]'>
@@ -163,10 +205,41 @@
       </div>
       <figcaption>Detail, WAFT, FATE, ground truth. Zero-shot.</figcaption>
     </figure>
+      </div>
+    </details>
   </div>
 </section>
 
-<!-- ============================================================ METHOD -->
+<section id="results" class="section alt">
+  <div class="wrap narrow sec-head">
+    <div class="eyebrow">Evidence</div>
+    <h2>Lowest zero-shot error on Sintel Final and KITTI</h2>
+  </div>
+  <div class="wrap">
+    <figure class="card fig" id="fig-zeroshot">
+      <div class="fig-head">
+        <div class="fig-title">Error versus compute</div>
+        <div class="pills small" role="group" aria-label="Metric" data-group="zs-metric">
+          <button class="pill" aria-pressed="true" data-metric="sintelFinal">Sintel Final</button>
+          <button class="pill" aria-pressed="false" data-metric="sintelClean">Sintel Clean</button>
+          <button class="pill" aria-pressed="false" data-metric="kittiEPE">KITTI EPE</button>
+          <button class="pill" aria-pressed="false" data-metric="kittiFl">KITTI Fl</button>
+        </div>
+      </div>
+      <div class="split">
+        <div class="chart" id="chart-zs-scatter"></div>
+        <div class="chart" id="chart-zs-rank"></div>
+      </div>
+      <figcaption>Zero-shot error after training on FlyingChairs and FlyingThings3D. Lower is better.</figcaption>
+      <details class="numbers" data-table="zeroShot"><summary>Show the numbers</summary></details>
+    </figure>
+
+
+
+
+  </div>
+</section>
+
 <section id="method" class="section">
   <div class="wrap narrow sec-head">
     <div class="eyebrow">Method</div>
@@ -174,6 +247,10 @@
   </div>
 
   <div class="wrap">
+    <details class="card fold-card paper-abstract">
+      <summary><span class="fig-title">Read the full abstract</span></summary>
+      <div class="fold-body abstract"><p>Optical flow requires reliable matching from sufficient visual context and precise motion at every pixel. Existing methods such as WAFT match and estimate flow on the same coarse grids, then recover dense flow through learned upsampling, without explicitly linking visual support for matching to dense flow reconstruction. Our key insight is that dense pixel-level flow does not require equally dense matching. We decouple correspondence scale from flow resolution by adapting the size and shape of spatial supports to image structure for reliable matching, while reusing these supports for precise dense flow reconstruction. We realize this in Flow from Adaptive Token Estimation (FATE), whose token supports expand within coherent regions and contract near motion boundaries. Shared pixel-to-token associations pool features for matching and reconstruct pixel flow from token motions. Flow supervision jointly trains pixel grouping, token matching, and flow estimation without grouping labels, allowing FATE to anticipate which pixels are likely to move together from appearance alone. Trained on FlyingChairs/FlyingThings3D, FATE achieves the highest <em>zero-shot</em> accuracy on Sintel Final and KITTI, a critical setting given scarce real-world flow labels. For visible pixels, FATE improves accuracy within coherent regions, and more near motion boundaries. Its largest gains occur where direct matches are unavailable: Occluded or out-of-frame pixels account for roughly 10% of valid pixels but 50% of WAFT's total error. Experiments show that adaptive correspondence through pixel-to-token grouping enables reliable matching and precise pixel-level flow, improving generalization to unseen real scenes.</p></div>
+    </details>
     <figure class="card fig" id="pipeline">
       <div class="fig-head">
         <div class="fig-title">The pipeline, step by step</div>
@@ -240,6 +317,9 @@
       </div>
     </details>
 
+    <details class="card fold-card supervision-details">
+      <summary><span class="fig-title">How we supervise matching, assignments, and reconstruction</span></summary>
+      <div class="fold-body">
     <figure class="card fig" id="spaces">
       <div class="fig-head"><div class="fig-title">Correspondence in token space, supervision in both spaces</div></div>
       <img class="structure-img" src="static/img/method/spaces.webp" width="1659" height="518" loading="lazy"
@@ -257,34 +337,42 @@
         <div class="loss-tag">\(\mathcal L_{\text{recon}}(P_q,P_x\mid F_x^{\text{gt}})\)<span class="loss-name">Preserve motion through grouping</span></div>
       </div>
     </div>
+      </div>
+    </details>
+    <details class="card fold-card support-details">
+      <summary><span class="fig-title">Inspect learned groups and individual token supports</span></summary>
+      <div class="fold-body">
+    <figure class="card fig" id="groups">
+      <div class="fig-head"><div class="fig-title">Learned groups and selected tokens</div></div>
+      <div class="regions" data-connectors='[{"c":"context","from":"r1-image1","box":[0.2321,0.3929,0.5179,0.6786],"fc":["ne","se"],"to":"r1-groups","tc":["nw","sw"]},{"c":"detail","from":"r1-groups","box":[0.1719,0.25,0.3281,0.5625],"fc":["ne","se"],"to":"r1-unit","tc":["nw","sw"]}]'>
+        <div class="region-row">
+          <figure class="pm" data-panel="r1-image1"><figcaption>Image 1</figcaption><img src="static/img/units/r1_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
+          <figure class="pm" data-panel="r1-groups"><figcaption>Learned groups</figcaption><img src="static/img/units/r1_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
+          <figure class="pm" data-panel="r1-unit"><figcaption>Token support</figcaption><img src="static/img/units/r1_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
+          <figure class="pm"><figcaption>GT flow (crop)</figcaption><img src="static/img/units/r1_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
+          <figure class="pm"><figcaption>GT flow (detail)</figcaption><img src="static/img/units/r1_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
+        </div>
+        <div class="region-row">
+          <figure class="pm"><img src="static/img/units/r2_image1.webp" width="774" height="387" loading="lazy" alt="Image 1 with the enlarged region boxed"></figure>
+          <figure class="pm"><img src="static/img/units/r2_groups.webp" width="774" height="387" loading="lazy" alt="All learned groups in the enlarged region"></figure>
+          <figure class="pm"><img src="static/img/units/r2_unit_rgb.webp" width="387" height="387" loading="lazy" alt="One selected token's support and its nominal cell"></figure>
+          <figure class="pm"><img src="static/img/units/r2_learned_gt.webp" width="774" height="387" loading="lazy" alt="Ground-truth flow with the same learned groups"></figure>
+          <figure class="pm"><img src="static/img/units/r2_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
+        </div>
+      </div>
+      <figcaption>Learned tokens follow the surface, not the grid.</figcaption>
+    </figure>
+      </div>
+    </details>
   </div>
 </section>
 
-<!-- ============================================================ RESULTS -->
-<section id="results" class="section alt">
+<section id="analysis" class="section">
   <div class="wrap narrow sec-head">
-    <div class="eyebrow">Evidence</div>
-    <h2>Lowest zero-shot error on Sintel Final and KITTI</h2>
+    <div class="eyebrow">Analysis</div>
+    <h2>Adaptive tokens beat fixed grids at the same token count</h2>
   </div>
   <div class="wrap">
-    <figure class="card fig" id="fig-zeroshot">
-      <div class="fig-head">
-        <div class="fig-title">Error versus compute</div>
-        <div class="pills small" role="group" aria-label="Metric" data-group="zs-metric">
-          <button class="pill" aria-pressed="true" data-metric="sintelFinal">Sintel Final</button>
-          <button class="pill" aria-pressed="false" data-metric="sintelClean">Sintel Clean</button>
-          <button class="pill" aria-pressed="false" data-metric="kittiEPE">KITTI EPE</button>
-          <button class="pill" aria-pressed="false" data-metric="kittiFl">KITTI Fl</button>
-        </div>
-      </div>
-      <div class="split">
-        <div class="chart" id="chart-zs-scatter"></div>
-        <div class="chart" id="chart-zs-rank"></div>
-      </div>
-      <figcaption>Zero-shot error after training on FlyingChairs and FlyingThings3D. Lower is better.</figcaption>
-      <details class="numbers" data-table="zeroShot"><summary>Show the numbers</summary></details>
-    </figure>
-
     <figure class="card fig" id="fig-regions">
       <div class="fig-head">
         <div class="fig-title">FATE's gain is largest where a match is missing</div>
@@ -296,59 +384,6 @@
       <figcaption>Gain is WAFT's error minus FATE's. It is largest where the match is missing.</figcaption>
       <details class="numbers" data-table="regions"><summary>Show the numbers</summary></details>
     </figure>
-
-    <div class="card fig gallery" id="gallery">
-      <div class="fig-head"><div class="fig-title">Zero-shot examples</div><span class="fig-note">WAFT estimates flow for four times as many tokens</span></div>
-      <div class="thumbs" role="group" aria-label="Examples"></div>
-      <div class="gallery-head">
-        <div>
-          <div class="ex-title" id="ex-title"></div>
-          <div class="ex-meta" id="ex-meta"></div>
-        </div>
-        <div class="pills small" id="gallery-views" role="group" aria-label="Large view" hidden>
-          <button class="pill" type="button" aria-pressed="true" data-gallery-view="flow">Flow</button>
-          <button class="pill" type="button" aria-pressed="false" data-gallery-view="tokens">Token map</button>
-        </div>
-      </div>
-      <p class="ex-caption" id="ex-caption"></p>
-      <div class="minis">
-        <figure class="mini" data-layer="image1"><div class="mini-img"><img alt="Image 1" draggable="false"><span class="mark"></span></div><figcaption>Image 1</figcaption></figure>
-        <figure class="mini" data-layer="image2"><div class="mini-img"><img alt="Image 2" draggable="false"><span class="mark"></span></div><figcaption>Image 2</figcaption></figure>
-        <figure class="mini" data-layer="gt"><div class="mini-img"><img alt="Ground-truth flow" draggable="false"><span class="mark"></span></div><figcaption>Ground truth</figcaption></figure>
-        <figure class="mini" data-layer="occ"><div class="mini-img"><img alt="Target visibility" draggable="false"><span class="mark"></span></div><figcaption><span class="sw-occ"></span>Target occluded or out of frame</figcaption></figure>
-      </div>
-      <div class="compare" id="gallery-compare">
-        <img class="layer base" alt="FATE flow" draggable="false">
-        <div class="clip"><img class="layer top" alt="WAFT flow" draggable="false"></div>
-        <div class="divider" role="slider" tabindex="0" aria-label="Drag to compare WAFT and FATE" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span class="knob"><svg viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
-        <span class="tag tag-left">WAFT</span>
-        <span class="tag tag-right">FATE (ours)</span>
-        <div class="lens" aria-hidden="true"></div>
-        <span class="mark"></span>
-      </div>
-      <p class="gallery-hint" id="gallery-hint">Drag to compare WAFT and FATE.</p>
-      <details class="reading" id="flow-colors">
-        <summary>How to read these images</summary>
-        <div class="reading-body">
-          <canvas id="colorwheel" width="132" height="132" aria-label="Optical flow color wheel"></canvas>
-          <p><b>Hue</b> gives the direction of motion and <b>color intensity</b> its speed; white means no motion.
-            Ground truth and both predictions share one color scale per example. In the visibility map, <b>blue</b>
-            marks pixels whose target is occluded or out of frame, gray the other valid pixels, and black excluded
-            pixels. Black in the ground truth marks missing labels; KITTI's sparse labels are enlarged for display.
-            On the token map, white lines separate pixels assigned to different tokens.</p>
-        </div>
-      </details>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ ANALYSIS -->
-<section id="analysis" class="section">
-  <div class="wrap narrow sec-head">
-    <div class="eyebrow">Analysis</div>
-    <h2>Adaptive tokens beat fixed grids at the same token count</h2>
-  </div>
-  <div class="wrap">
     <figure class="card fig" id="fig-setup">
       <div class="fig-head"><div class="fig-title">The setup: the same model with different tokens</div></div>
       <div class="setup">
@@ -409,7 +444,6 @@
   </div>
 </section>
 
-<!-- ============================================================ CONCLUSION + CITE -->
 <section class="section alt" id="conclusion">
   <div class="wrap narrow">
     <div class="eyebrow">Conclusion</div>
@@ -453,6 +487,6 @@
 <script defer src="static/vendor/katex/contrib/auto-render.min.js"></script>
 <script src="static/js/data.js?v=16"></script>
 <script src="static/js/charts.js?v=16"></script>
-<script src="static/js/main.js?v=16"></script>
+<script src="static/js/main.js?v=17"></script>
 </body>
 </html>

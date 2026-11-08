@@ -55,6 +55,21 @@
   }, { rootMargin: "-45% 0px -50% 0px" });
   $$("section[id]").forEach((s) => io.observe(s));
 
+  const story = $("#opening-story");
+  if (story) {
+    $$("[data-story-scale]").forEach((button) => button.addEventListener("click", () => {
+      const detail = button.dataset.storyScale === "detail";
+      story.classList.toggle("detail", detail);
+      $$("[data-story-scale]").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+    }));
+    $$("[data-story-frame]").forEach((button) => button.addEventListener("click", () => {
+      const frame = button.dataset.storyFrame;
+      $("#story-input").src = `${IMG}examples/sintel-ambush4/image${frame}.webp`;
+      $("#story-input").alt = `Image ${frame} of the same Sintel sleeve scene`;
+      $$("[data-story-frame]").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+    }));
+  }
+
   /* --------------------------------------------------------------- math */
   function renderMath() {
     if (!window.renderMathInElement) return false;
@@ -376,7 +391,7 @@
     const cmpRoot = $("#gallery-compare"), cmp = Compare(cmpRoot);
     const viewToggle = $("#gallery-views");
     const src = (ex, layer) => `${IMG}examples/${ex.id}/${layer}.webp`;
-    let cur = EX[0], view = "flow";
+    let cur = EX.find((ex) => ex.id === root.dataset.initial) || EX[0], view = "flow";
 
     EX.forEach((ex) => {
       const b = document.createElement("button");
