@@ -182,11 +182,11 @@
         boxes: ["dense", "aLabel", "aPanel"] },
       { n: 3, name: "Token matching features", text: "Pooling with \\(P_q\\) averages dense features over each token's learned support. The pooled feature then queries nearby dense features through local attention, so a token can draw on broader context.",
         boxes: ["dense", "aPanel", "pool", "attn", "feat"] },
-      { n: 4, name: "Matching and refinement", text: "WAFT's iterative matching and refinement estimates token flow \\(F_q\\) from the two images' token features. Each image's assignments are predicted once and reused across the \\(T\\) updates.",
+      { n: 4, name: "Matching and refinement", text: "WAFT's iterative matching and refinement framework estimates token flow \\(F_q\\) from the two images' token features. Each image's assignments are predicted once and reused across the \\(T\\) updates.",
         boxes: ["feat", "refine", "unitFlow"] },
       { n: 5, name: "Adaptive broadcasting", text: "Each pixel blends nearby token motions using its learned assignment weights: \\(F_x = P_x F_q\\).",
         boxes: ["unitFlow", "aPanel", "broadcast", "flow"] },
-      { n: "", name: "Supervision", text: "The dashed link marks ground-truth flow supervision of both token predictions and assignments. The figure below shows where each objective acts.",
+      { n: "", name: "Supervision", text: "The dashed link marks ground-truth flow supervision of both token predictions and assignments. Expand ‘How we supervise matching, assignments, and reconstruction’ below to see where each objective acts.",
         boxes: ["gt", "supervision", "flow"] },
     ];
     const { width: VW, height: VH } = svg.viewBox.baseVal;
@@ -285,7 +285,7 @@
       $("#v-entropy").textContent = H.toFixed(2);
       $("#entropy-mark").style.left = (H * 100).toFixed(1) + "%";
       let msg;
-      if (H < 0.15) msg = "<b>Concentrated.</b> The pixel takes its flow from one token, as near a motion boundary.";
+      if (H < 0.15) msg = "<b>Concentrated.</b> The pixel puts most of its weight on one token, as near a motion boundary.";
       else if (H > 0.6) msg = "<b>Broad.</b> Several tokens share the pixel\u2019s weight, as inside a coherent region.";
       else msg = "<b>In between.</b> A few nearby tokens share the pixel.";
       if (st.elong > 2) msg += " Elongation spreads its weight along one direction.";
