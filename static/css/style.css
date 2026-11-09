@@ -135,7 +135,7 @@ b, strong { font-weight: 650; }
 }
 .hero h1 .ac { color: var(--dace); }
 .paper-title {
-  font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 1.2rem; line-height: 1.4;
+  font-family: var(--serif); font-style: normal; font-weight: 500; font-size: 1.25rem; line-height: 1.4;
   color: var(--ink-2); margin: -8px auto 18px;
 }
 .acronym-initial { font-weight: 600; color: var(--dace); }
