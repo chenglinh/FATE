@@ -550,9 +550,8 @@ table.num .src { font-size: 12px; color: var(--muted); }
 .reading-body p { font-size: 14.5px; color: var(--ink-2); margin: 0; }
 
 /* -------------------------------------------------------- conclusion */
-.conclusion { font-family: var(--serif); font-size: 1.36rem; line-height: 1.55; margin: 0; }
+.conclusion { font-size: 1.1rem; line-height: 1.65; color: var(--ink-2); margin: 0; text-wrap: pretty; }
 .conclusion b { font-weight: 600; }
-.conclusion-detail { margin: 18px 0 0; color: var(--ink-2); font-size: 1.03rem; line-height: 1.65; text-wrap: pretty; }
 .bibtex { position: relative; padding: 0; overflow: hidden; }
 .bibtex pre {
   margin: 0; padding: 18px 20px; overflow-x: auto; font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
