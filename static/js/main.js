@@ -175,7 +175,7 @@
       gt: [3.6, 164.3, 108, 225.5], supervision: [110, 166, 170, 190],
     };
     const steps = [
-      { n: "", name: "Overview", text: "Assignments \\(A\\) feed both adaptive pooling and broadcasting. The lighter branch processes Image 2 separately with shared network weights, extracting its own features and predicting its own assignments. The assignment and token-flow panels enlarge the same moving-blade region. Pick a step to highlight it.", boxes: [] },
+      { n: "", name: "Overview", text: "The same learned associations \\(A\\) pool visual evidence for matching and reconstruct dense flow from token motions. The lighter branch processes Image 2 separately with shared network weights, extracting its own features and predicting its own assignments. The assignment and token-flow panels enlarge the same moving-blade region. Pick a step to highlight it.", boxes: [] },
       { n: 1, name: "Dense features", text: "A shared backbone extracts dense features from each image.",
         boxes: ["images", "extract", "dense"] },
       { n: 2, name: "Soft assignments", text: "A compact head predicts how strongly each pixel belongs to the \\(3\\times3\\) token anchors around its cell. These weights form the assignment matrix \\(A\\): a row holds one pixel's weights, a column one token's support.",
@@ -184,9 +184,9 @@
         boxes: ["dense", "aPanel", "pool", "attn", "feat"] },
       { n: 4, name: "Matching and refinement", text: "WAFT's iterative matching and refinement framework estimates token flow \\(F_q\\) from the two images' token features. Each image's assignments are predicted once and reused across the \\(T\\) updates.",
         boxes: ["feat", "refine", "unitFlow"] },
-      { n: 5, name: "Adaptive broadcasting", text: "Each pixel blends nearby token motions using its learned assignment weights: \\(F_x = P_x F_q\\).",
+      { n: 5, name: "Adaptive broadcasting", text: "Each token predicts one motion vector, while each pixel blends motions from multiple tokens using its learned assignment weights: \\(F_x = P_x F_q\\). Pixels within the same token’s support can therefore have distinct flow estimates.",
         boxes: ["unitFlow", "aPanel", "broadcast", "flow"] },
-      { n: "", name: "Supervision", text: "The dashed link marks ground-truth flow supervision of both token predictions and assignments. Expand ‘How we supervise matching, assignments, and reconstruction’ below to see where each objective acts.",
+      { n: "", name: "Supervision", text: "Ground-truth flow jointly trains pixel grouping, token matching, and flow estimation without grouping labels. At test time, the model predicts the associations from appearance alone. Expand ‘How we supervise matching, assignments, and reconstruction’ below to see where each objective acts.",
         boxes: ["gt", "supervision", "flow"] },
     ];
     const { width: VW, height: VH } = svg.viewBox.baseVal;

@@ -8,19 +8,19 @@
   <meta name="author" content="Cheng-Lin Hsieh, Stella X. Yu">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Dense Flow from Adaptive Correspondence">
-  <meta property="og:description" content="Adaptive correspondence tokens for dense optical flow. NeurIPS 2026.">
+  <meta property="og:description" content="Dense pixel-level flow does not require equally dense matching. FATE adapts correspondence support and reuses it for precise flow reconstruction.">
   <meta property="og:url" content="https://chenglinh.github.io/FATE/">
   <meta property="og:image" content="https://chenglinh.github.io/FATE/static/img/social.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Dense Flow from Adaptive Correspondence">
-  <meta name="twitter:description" content="Adaptive correspondence tokens for dense optical flow. NeurIPS 2026.">
+  <meta name="twitter:description" content="Dense pixel-level flow does not require equally dense matching. FATE adapts correspondence support and reuses it for precise flow reconstruction.">
   <meta name="twitter:image" content="https://chenglinh.github.io/FATE/static/img/social.jpg">
   <link rel="icon" href="static/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="static/fonts/eb-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="static/vendor/katex/katex.min.css">
-  <link rel="stylesheet" href="static/css/style.css?v=20">
+  <link rel="stylesheet" href="static/css/style.css?v=21">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -51,7 +51,7 @@
     </p>
     <p class="affil">University of Michigan</p>
     <div class="buttons">
-      <a class="btn" href="https://chenglinh.github.io/papers/dense-flow-adaptive-correspondence.pdf?v=20261108">
+      <a class="btn" href="https://chenglinh.github.io/papers/dense-flow-adaptive-correspondence.pdf?v=20261108-sync">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l6 6v14H6z M14 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Paper</a>
       <span class="btn disabled" title="Coming soon">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l14 16M19 4L5 20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>arXiv <small>soon</small></span>
@@ -87,12 +87,12 @@
       <figure class="story-stage">
         <figcaption class="story-label"><span class="step-number">02</span><strong>Adaptive groups</strong><span class="stage-arrow" aria-hidden="true">&rarr;</span></figcaption>
         <div class="story-media"><img id="story-groups" class="story-image cropped" src="static/img/teaser/blade_groups_detail.png" data-whole-src="static/img/teaser/blade_units.webp" data-detail-src="static/img/teaser/blade_groups_detail.png" width="900" height="450" alt="Learned pixel groups following the curved blade and surrounding background"></div>
-        <p>Gather evidence in groups that follow the blade’s shape.</p>
+        <p>Adapt each token’s support to image structure for reliable matching.</p>
       </figure>
       <figure class="story-stage">
         <figcaption class="story-label"><span class="step-number">03</span><strong>Dense flow</strong><span class="stage-arrow" aria-hidden="true">&rarr;</span></figcaption>
         <div class="story-media"><img class="story-image" src="static/img/teaser/blade_flow.webp" width="1024" height="436" alt="FATE's predicted dense optical flow preserving the curved blade against the background"></div>
-        <p>Blend token motions while preserving the blade’s boundary.</p>
+        <p>Reuse the same associations to blend token motions into precise pixel flow.</p>
       </figure>
     </div>
     <p class="story-note">Sintel &middot; moving-blade example from the method figure. The detail view shares one crop across all three panels; groups and flow refer to Image 1. White contours show each pixel’s strongest token assignment; flow reconstruction blends motions from multiple tokens.</p>
@@ -243,8 +243,8 @@
 <section id="method" class="section">
   <div class="wrap narrow sec-head">
     <div class="eyebrow">Method</div>
-    <h2>Coarse matches, then precise pixel flow</h2>
-    <p class="lead">Flow supervision teaches FATE to predict these associations from appearance, without grouping labels.</p>
+    <h2>Decouple matching scale from flow resolution</h2>
+    <p class="lead">Matching needs sufficient visual context; flow must be precise at every pixel. FATE adapts the size and shape of each token’s support to image structure, then reuses the same <span class="text-term">pixel-to-token</span> associations to reconstruct dense flow.</p>
   </div>
 
   <div class="wrap">
@@ -278,7 +278,7 @@
       <div class="fig-head"><div class="fig-title">Learned assignments adapt tokens to motion structure</div></div>
       <img class="structure-img" src="static/img/method/structure.webp" width="1678" height="420" loading="lazy"
         alt="A moving blade from Sintel with two examined pixels. Near the motion boundary, the pixel puts almost all its weight on the blade token below, whose support follows the boundary. In the coherent region, the pixel shares weight across several tokens, and the selected token's support is broad.">
-      <figcaption>Near a boundary, the pixel puts most of its weight on the blade token. Within a coherent region, it blends several token motions.</figcaption>
+      <figcaption>Supports contract near motion boundaries and expand within coherent regions. Each token predicts one motion vector, but each pixel combines motions from multiple tokens, allowing distinct pixel flow within the same token’s support.</figcaption>
     </figure>
 
     <details class="card fold-card" id="assign-demo">
@@ -361,7 +361,7 @@
           <figure class="pm"><img src="static/img/units/r2_unit_gt.webp" width="387" height="387" loading="lazy" alt="Ground-truth flow with the same selected token"></figure>
         </div>
       </div>
-      <figcaption>Learned tokens follow the surface, not the grid.</figcaption>
+      <figcaption>Token anchors stay on a coarse grid; their learned supports adapt in size and shape to image structure.</figcaption>
     </figure>
       </div>
     </details>
@@ -447,8 +447,10 @@
 
 <section class="section alt" id="conclusion">
   <div class="wrap narrow">
-    <div class="eyebrow">Conclusion</div>
-    <p class="conclusion">Same grouping for the match and the pixel flow. Largest gains where a direct match is missing.</p>
+    <div class="eyebrow">The takeaway</div>
+    <h2>Dense flow does not require dense matching.</h2>
+    <p class="conclusion">FATE decouples correspondence scale from flow resolution while keeping them visually grounded in the same adaptive supports. The same learned associations gather evidence for matching and combine token motions into precise pixel flow.</p>
+    <p class="conclusion-detail">Flow supervision teaches FATE to predict these associations from appearance, without grouping labels. It generalizes to unseen scenes, with the largest gains where direct matches are unavailable and further gains near motion boundaries.</p>
   </div>
 </section>
 
@@ -488,6 +490,6 @@
 <script defer src="static/vendor/katex/contrib/auto-render.min.js"></script>
 <script src="static/js/data.js?v=16"></script>
 <script src="static/js/charts.js?v=16"></script>
-<script src="static/js/main.js?v=20"></script>
+<script src="static/js/main.js?v=21"></script>
 </body>
 </html>
