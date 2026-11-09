@@ -612,8 +612,14 @@ table.num .src { font-size: 12px; color: var(--muted); }
 .authors { font-size: 1.08rem; }
 .affil { font-size: 15px; margin-bottom: 17px; }
 .tldr { padding-top: 20px; }
-.tldr-text { max-width: 790px; margin-bottom: 0; font-size: 1.1rem; line-height: 1.6; }
-.tldr-sentence { display: block; text-wrap: balance; }
+.tldr-panel {
+  max-width: 980px; margin: 0 auto; padding: 26px 32px 28px;
+  background: #F8F5EF; border-left: 3px solid var(--dace); border-radius: 0 12px 12px 0;
+}
+.tldr-panel .eyebrow { margin-bottom: 10px; }
+.tldr-panel h2 { max-width: 830px; font-size: clamp(1.65rem, 2.6vw, 2.15rem); line-height: 1.2; margin-bottom: 13px; }
+.tldr-emphasis { color: #9C4814; }
+.tldr-text { max-width: 830px; margin: 0; font-size: 1.05rem; line-height: 1.65; text-align: left; text-wrap: balance; }
 .story-section { padding: 38px 0 36px; }
 .story-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 21px; }
 .story-heading h2 { font-size: clamp(1.7rem, 2.9vw, 2.15rem); margin-bottom: 0; }
@@ -664,6 +670,7 @@ table.num .src { font-size: 12px; color: var(--muted); }
   .hero h1 { font-size: 2rem; }
   .paper-title { font-size: 1.125rem; }
   .tldr { padding-top: 20px; }
+  .tldr-panel { padding: 20px 19px 22px; }
   .tldr-text { font-size: 16px; }
   .story-section { padding-top: 30px; padding-bottom: 30px; }
   .story-grid { grid-template-columns: 1fr; gap: 22px; }

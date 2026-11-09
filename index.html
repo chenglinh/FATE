@@ -20,7 +20,7 @@
   <link rel="icon" href="static/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="static/fonts/eb-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="static/vendor/katex/katex.min.css">
-  <link rel="stylesheet" href="static/css/style.css?v=22">
+  <link rel="stylesheet" href="static/css/style.css?v=23">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -65,8 +65,12 @@
 
 <main id="main">
 
-<section class="tldr wrap">
-  <p class="tldr-text"><span class="tldr-sentence">Dense <span class="text-term">pixel-level</span> flow does not require equally dense matching.</span> <span class="tldr-sentence">FATE learns adaptive spatial supports for reliable matching and reuses the same <span class="text-term">pixel-to-token</span> associations to reconstruct precise flow.</span></p>
+<section class="tldr wrap" aria-labelledby="tldr-title">
+  <div class="tldr-panel">
+    <div class="eyebrow">TL;DR</div>
+    <h2 id="tldr-title">Dense <span class="text-term">pixel-level</span> flow does not require <span class="tldr-emphasis">equally dense matching.</span></h2>
+    <p class="tldr-text">FATE learns adaptive spatial supports for reliable matching and reuses the same <span class="text-term">pixel-to-token</span> associations to reconstruct precise flow.</p>
+  </div>
 </section>
 
 <section id="tokens" class="section story-section">
@@ -447,8 +451,9 @@
 
 <section class="section alt" id="conclusion">
   <div class="wrap narrow">
-    <h2>Takeaway</h2>
-    <p class="conclusion">Dense flow does not require dense matching. FATE decouples correspondence scale from flow resolution while keeping them visually grounded in the same adaptive supports. The same learned associations gather evidence for matching and combine token motions into precise pixel flow. Flow supervision teaches FATE to predict these associations from appearance, without grouping labels. It generalizes to unseen scenes, with the largest gains where direct matches are unavailable and further gains near motion boundaries.</p>
+    <div class="eyebrow">Takeaway</div>
+    <h2>Dense flow does not require dense matching.</h2>
+    <p class="conclusion">FATE decouples correspondence scale from flow resolution while keeping them visually grounded in the same adaptive supports. The same learned associations gather evidence for matching and combine token motions into precise pixel flow. Flow supervision teaches FATE to predict these associations from appearance, without grouping labels. It generalizes to unseen scenes, with the largest gains where direct matches are unavailable and further gains near motion boundaries.</p>
   </div>
 </section>
 
