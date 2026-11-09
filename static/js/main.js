@@ -175,18 +175,18 @@
       gt: [3.6, 164.3, 108, 225.5], supervision: [110, 166, 170, 190],
     };
     const steps = [
-      { n: "", name: "Overview", text: "The same learned associations \\(A\\) pool visual evidence for matching and reconstruct dense flow from token motions. The lighter branch processes Image 2 separately with shared network weights, extracting its own features and predicting its own assignments. The assignment and token-flow panels enlarge the same moving-blade region. Pick a step to highlight it.", boxes: [] },
-      { n: 1, name: "Dense features", text: "A shared backbone extracts dense features from each image.",
+      { n: "", name: "Overview", text: "Each image is represented by overlapping pixel groups. A token summarizes each group for matching. The same grouping weights \\(A\\) gather information into tokens and combine their motions back into motion at every pixel. The lighter branch processes Image 2 separately with the same network. Select a step to highlight it.", boxes: [] },
+      { n: 1, name: "Dense features", text: "The same feature-extraction network processes both images, turning local visual patterns into numerical features.",
         boxes: ["images", "extract", "dense"] },
-      { n: 2, name: "Soft assignments", text: "A compact head predicts how strongly each pixel belongs to the \\(3\\times3\\) token anchors around its cell. These weights form the assignment matrix \\(A\\): a row holds one pixel's weights, a column one token's support.",
+      { n: 2, name: "Soft assignments", text: "A pixel can belong partly to several groups. A small network sets weights over the \\(3\\times3\\) nearby token anchors, the fixed reference points for those groups. Matrix \\(A\\) collects these weights: a row describes one pixel's memberships, and a column describes one token's pixel group.",
         boxes: ["dense", "aLabel", "aPanel"] },
-      { n: 3, name: "Token matching features", text: "Pooling with \\(P_q\\) averages dense features over each token's learned support. The pooled feature then queries nearby dense features through local attention, so a token can draw on broader context.",
+      { n: 3, name: "Token matching features", text: "Pooling with \\(P_q\\) forms a weighted average of the image features in each group. Local attention lets this summary draw additional information from nearby image features.",
         boxes: ["dense", "aPanel", "pool", "attn", "feat"] },
-      { n: 4, name: "Matching and refinement", text: "WAFT's iterative matching and refinement framework estimates token flow \\(F_q\\) from the two images' token features. Each image's assignments are predicted once and reused across the \\(T\\) updates.",
+      { n: 4, name: "Matching and refinement", text: "WAFT's matching and refinement framework repeatedly updates each token's motion estimate \\(F_q\\) using the two images' token features. Each image's grouping is predicted once and reused across the \\(T\\) updates.",
         boxes: ["feat", "refine", "unitFlow"] },
-      { n: 5, name: "Adaptive broadcasting", text: "Each token predicts one motion vector, while each pixel blends motions from multiple tokens using its learned assignment weights: \\(F_x = P_x F_q\\). Pixels within the same token’s support can therefore have distinct flow estimates.",
+      { n: 5, name: "Adaptive broadcasting", text: "Each token has one motion estimate. Each pixel combines estimates from several tokens according to its group-membership weights: \\(F_x = P_x F_q\\). Pixels sharing a group can therefore have different motion estimates.",
         boxes: ["unitFlow", "aPanel", "broadcast", "flow"] },
-      { n: "", name: "Supervision", text: "Ground-truth flow jointly trains pixel grouping, token matching, and flow estimation without grouping labels. At test time, the model predicts the associations from appearance alone. Expand ‘How we supervise matching, assignments, and reconstruction’ below to see where each objective acts.",
+      { n: "", name: "Supervision", text: "Training uses known motion to learn grouping, matching, and motion estimates together, without labels for the groups. At test time, grouping is predicted from the images alone. Expand ‘How training teaches grouping, matching, and motion’ below to see the three training objectives.",
         boxes: ["gt", "supervision", "flow"] },
     ];
     const { width: VW, height: VH } = svg.viewBox.baseVal;
@@ -388,7 +388,7 @@
       { id: "sintel-cave2", ds: "Sintel", name: "cave 2", title: "A wing behind crossing limbs", w: 1024, h: 436, tokens: true,
         caption: "WAFT assigns incorrect motion to the wing behind the crossing limbs; FATE recovers the wing\u2019s motion." },
       { id: "sintel-ambush4", ds: "Sintel", name: "ambush 4", title: "A broad sleeve", w: 1024, h: 436, tokens: true,
-        caption: "The sleeve moves differently across its extent. FATE recovers this spatially varying motion; WAFT gives much of it the wrong motion." },
+        caption: "Different parts of the sleeve move in different ways. FATE captures these differences; WAFT gives much of it the wrong motion." },
     ];
     const minis = $$(".mini", root), thumbs = $(".thumbs", root);
     const cmpRoot = $("#gallery-compare"), cmp = Compare(cmpRoot);
@@ -441,12 +441,12 @@
       });
       const tokens = view === "tokens";
       cmpRoot.classList.toggle("tokens", tokens);
-      const hint = tokens ? "Drag to compare the image and the token map." : "Drag to compare WAFT and FATE.";
+      const hint = tokens ? "Drag to compare the image and its pixel groups." : "Drag to compare WAFT and FATE.";
       $("#gallery-hint").textContent = hint;
       $(".divider", cmpRoot).setAttribute("aria-label", hint.replace(/\.$/, ""));
       cmp.set({
         left: tokens ? { src: src(cur, "image1"), label: "Image 1" } : { src: src(cur, "waft"), label: "WAFT" },
-        right: tokens ? { src: src(cur, "tokens"), label: "Token map" } : { src: src(cur, "fate"), label: "FATE (ours)" },
+        right: tokens ? { src: src(cur, "tokens"), label: "Pixel groups" } : { src: src(cur, "fate"), label: "FATE (ours)" },
         w: cur.w, h: cur.h, at: cur.at ?? 50,
       });
     }
