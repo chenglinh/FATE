@@ -131,10 +131,14 @@ b, strong { font-weight: 650; }
 .hero h1 {
   font-family: var(--sans); font-weight: 750;
   font-size: clamp(2.05rem, 4.6vw, 3.25rem); line-height: 1.12;
-  letter-spacing: -.022em; margin: 0 auto 20px; max-width: 900px;
+  letter-spacing: -.022em; margin: 0 auto 20px;
 }
 .hero h1 .ac { color: var(--dace); }
-.paper-title { font-family: var(--sans); font-weight: 600; font-size: 1.15rem; color: var(--dace); margin: -8px auto 18px; }
+.paper-title {
+  font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 1.2rem; line-height: 1.4;
+  color: var(--ink-2); margin: -8px auto 18px;
+}
+.acronym-initial { font-weight: 600; color: var(--dace); }
 .authors { font-size: 1.2rem; margin: 0; }
 .authors a { color: var(--ink); border-bottom: 1px solid var(--line-2); }
 .authors a:hover { text-decoration: none; border-bottom-color: var(--dace); color: var(--link); }
@@ -251,13 +255,23 @@ h3 { font-size: 1.12rem; margin: 0 0 8px; }
 h3.sub { margin: 34px 0 10px; font-size: 1.16rem; }
 .lead { font-size: 1.07rem; color: var(--ink-2); margin: 0; }
 p { margin: 0 0 14px; }
+.text-term { white-space: nowrap; }
+p, figcaption, .step-text, .ex-caption, .fig-note {
+  text-wrap: pretty;
+  hyphens: none;
+  -webkit-hyphens: none;
+}
+h1, h2, h3, .fig-title, .tldr-text, .lead, .conclusion, .story-stage > p,
+.story-note, .result-scope, .ex-caption, .premise-desc, .small-text, .fig figcaption {
+  text-wrap: balance;
+}
 
 .abstract { padding-top: 6px; padding-bottom: 8px; }
 .abstract h2 {
   margin: 0 0 10px; font-family: var(--sans); font-size: 12.5px; font-weight: 750;
   letter-spacing: .1em; text-transform: uppercase; color: var(--dace); line-height: 1.4;
 }
-.abstract p { text-align: justify; hyphens: auto; -webkit-hyphens: auto; margin: 0; }
+.abstract p { text-align: left; margin: 0; }
 
 .fold-card > summary {
   list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -599,6 +613,7 @@ table.num .src { font-size: 12px; color: var(--muted); }
 .affil { font-size: 15px; margin-bottom: 17px; }
 .tldr { padding-top: 20px; }
 .tldr-text { max-width: 790px; margin-bottom: 0; font-size: 1.1rem; line-height: 1.6; }
+.tldr-sentence { display: block; text-wrap: balance; }
 .story-section { padding: 38px 0 36px; }
 .story-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 21px; }
 .story-heading h2 { font-size: clamp(1.7rem, 2.9vw, 2.15rem); margin-bottom: 0; }
@@ -647,7 +662,7 @@ table.num .src { font-size: 12px; color: var(--muted); }
 @media (max-width: 600px) {
   .hero { padding-top: 23px; }
   .hero h1 { font-size: 2rem; }
-  .paper-title { font-size: 1rem; }
+  .paper-title { font-size: 1.125rem; }
   .tldr { padding-top: 20px; }
   .tldr-text { font-size: 16px; }
   .story-section { padding-top: 30px; padding-bottom: 30px; }
